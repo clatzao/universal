@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../core/theme.dart';
 import '../settings/settings.dart';
 import '../settings/settings_page.dart';
 import 'info_store.dart';
@@ -31,7 +32,7 @@ class InfoStrip extends StatelessWidget {
           Text((noCents ? _brl0 : _brl).format(v), style: style),
           if (change != null)
             Text(' ${up ? '▲' : '▼'}${change.abs().toStringAsFixed(2)}%',
-                style: style?.copyWith(color: up ? Colors.green : Colors.red)),
+                style: style?.copyWith(color: up ? AppTheme.positive : AppTheme.negative)),
         ]),
       );
     }

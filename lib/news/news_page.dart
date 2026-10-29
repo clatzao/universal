@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/format.dart';
+import '../core/theme.dart';
 import '../info/info_store.dart';
 import '../info/info_strip.dart';
 import '../settings/settings.dart';
@@ -125,13 +126,30 @@ class NewsCard extends StatelessWidget {
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('${item.sourceName} · ${ago(item.date)}',
-                    style: t.labelSmall?.copyWith(color: Theme.of(context).colorScheme.primary)),
-                const SizedBox(height: 4),
+                Row(children: [
+                  if (unread) ...[
+                    Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(color: AppTheme.accent, shape: BoxShape.circle)),
+                    const SizedBox(width: 6),
+                  ],
+                  Expanded(
+                    child: Text('${item.sourceName.toUpperCase()} · ${ago(item.date)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: t.labelSmall?.copyWith(color: AppTheme.textMuted, letterSpacing: 0.6)),
+                  ),
+                ]),
+                const SizedBox(height: 6),
                 Text(item.title,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
-                    style: t.titleSmall?.copyWith(fontWeight: unread ? FontWeight.bold : FontWeight.normal)),
+                    style: t.titleSmall?.copyWith(
+                      fontWeight: unread ? FontWeight.w600 : FontWeight.w400,
+                      color: unread ? AppTheme.text : AppTheme.textMuted,
+                      height: 1.3,
+                    )),
                 if (!dense && item.summary.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(item.summary, maxLines: 3, overflow: TextOverflow.ellipsis, style: t.bodySmall),

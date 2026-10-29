@@ -89,22 +89,31 @@ class FactOfDayCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Card(
-      color: scheme.tertiaryContainer,
+    return Container(
       margin: const EdgeInsets.all(12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(Icons.lightbulb, color: scheme.onTertiaryContainer),
-            const SizedBox(width: 8),
-            Text('Curiosidade do dia · ${fact.category.label}',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(color: scheme.onTertiaryContainer)),
-          ]),
-          const SizedBox(height: 8),
-          Text(fact.text, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: scheme.onTertiaryContainer)),
-        ]),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.tertiary.withValues(alpha: 0.18)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [scheme.tertiaryContainer, scheme.surfaceContainer],
+        ),
       ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(Icons.auto_awesome, size: 18, color: scheme.tertiary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text('CURIOSIDADE DO DIA · ${fact.category.label.toUpperCase()}',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.tertiary, letterSpacing: 1)),
+          ),
+        ]),
+        const SizedBox(height: 10),
+        Text(fact.text,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: scheme.onTertiaryContainer, height: 1.45)),
+      ]),
     );
   }
 }

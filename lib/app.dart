@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'background/background.dart';
+import 'core/theme.dart';
 import 'curiosities/curiosities_page.dart';
 import 'habits/habits_store.dart';
 import 'info/info_store.dart';
@@ -111,21 +112,14 @@ class _UniversalAppState extends State<UniversalApp> with WidgetsBindingObserver
     }
   }
 
-  ThemeData _theme(Brightness b) => ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4F46E5), brightness: b),
-        cardTheme: const CardThemeData(clipBehavior: Clip.antiAlias),
-      );
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Universal',
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
-      theme: _theme(Brightness.light),
-      darkTheme: _theme(Brightness.dark),
-      themeMode: ThemeMode.system,
+      theme: AppTheme.dark(),
+      themeMode: ThemeMode.dark,
       locale: const Locale('pt', 'BR'),
       supportedLocales: const [Locale('pt', 'BR')],
       localizationsDelegates: const [

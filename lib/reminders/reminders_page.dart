@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/format.dart';
+import '../core/theme.dart';
 import '../habits/habits_page.dart';
 import '../settings/settings.dart';
 import 'parser.dart';
@@ -96,13 +97,28 @@ class ReminderTile extends StatelessWidget {
       if (when != null) (pending ? 'Era ${friendlyWhen(when!)}' : friendlyWhen(when!)),
       describeRecurrence(r.rec),
     ].join(' · ');
+    final color = AppTheme.tone(r.category.color);
     return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: r.category.color.withValues(alpha: 0.15),
-        child: Icon(r.alarm ? Icons.alarm : r.category.icon, color: r.category.color),
+      contentPadding: const EdgeInsets.fromLTRB(16, 2, 8, 2),
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(r.alarm ? Icons.alarm : r.category.icon, color: color, size: 22),
       ),
-      title: Text(r.title, style: TextStyle(decoration: r.enabled ? null : TextDecoration.lineThrough)),
-      subtitle: Text(sub, maxLines: 2, overflow: TextOverflow.ellipsis),
+      title: Text(r.title,
+          style: TextStyle(
+            fontWeight: FontWeight.w500,
+            decoration: r.enabled ? null : TextDecoration.lineThrough,
+            color: r.enabled ? null : AppTheme.textMuted,
+          )),
+      subtitle: Text(sub,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: pending ? AppTheme.negative : AppTheme.textMuted)),
       trailing: r.enabled
           ? IconButton(
               tooltip: 'Feito',

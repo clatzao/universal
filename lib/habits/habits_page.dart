@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../core/format.dart';
+import '../core/theme.dart';
 import '../reminders/recurrence.dart';
 import 'habit.dart';
 import 'habits_store.dart';
@@ -69,24 +70,36 @@ class HabitCard extends StatelessWidget {
     final amount = h.amountOn(today);
     final progress = h.goal <= 0 ? 0.0 : (amount / h.goal).clamp(0.0, 1.0);
     final streak = h.streak(today);
+    final color = AppTheme.tone(h.type.color);
+    final t = Theme.of(context).textTheme;
     return Card(
       child: InkWell(
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HabitDetail(habitId: h.id))),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(14),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Icon(h.type.icon, color: h.type.color),
-              const SizedBox(width: 8),
-              Expanded(child: Text(h.name, style: Theme.of(context).textTheme.titleMedium)),
-              if (streak > 0) Text('🔥 $streak'),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(10)),
+                child: Icon(h.type.icon, color: color, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Text(h.name, style: t.titleMedium)),
+              if (streak > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(color: AppTheme.surfaceHighest, borderRadius: BorderRadius.circular(10)),
+                  child: Text('🔥 $streak', style: t.labelMedium),
+                ),
             ]),
-            const SizedBox(height: 8),
-            LinearProgressIndicator(value: progress, minHeight: 8, borderRadius: BorderRadius.circular(4), color: h.type.color),
-            const SizedBox(height: 4),
+            const SizedBox(height: 12),
+            LinearProgressIndicator(value: progress, minHeight: 6, borderRadius: BorderRadius.circular(3), color: color),
+            const SizedBox(height: 6),
             Text('${h.fmt(amount)} de ${h.fmt(h.goal)} ${h.unit}${h.metOn(today) ? ' · meta batida ✓' : ''}',
-                style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: 8),
+                style: t.bodySmall?.copyWith(color: AppTheme.textMuted)),
+            const SizedBox(height: 10),
             Wrap(spacing: 8, runSpacing: 4, children: [
               for (final q in h.quick)
                 FilledButton.tonal(
