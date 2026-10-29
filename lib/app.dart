@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'background/background.dart';
 import 'core/theme.dart';
 import 'curiosities/curiosities_page.dart';
+import 'finance/finance_store.dart';
 import 'habits/habits_store.dart';
 import 'info/info_store.dart';
 import 'more/more_page.dart';
@@ -88,6 +89,7 @@ class _UniversalAppState extends State<UniversalApp> with WidgetsBindingObserver
       if (ctx == null) return;
       ctx.read<RemindersStore>().load();
       ctx.read<HabitsStore>().load();
+      ctx.read<FinanceStore>().load();
       ctx.read<InfoStore>().refresh();
       Replanner.request();
     }

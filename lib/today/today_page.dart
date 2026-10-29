@@ -7,6 +7,8 @@ import '../core/format.dart';
 import '../core/theme.dart';
 import '../curiosities/curiosities_page.dart';
 import '../curiosities/facts.dart';
+import '../finance/finance_page.dart';
+import '../finance/finance_store.dart';
 import '../habits/habits_page.dart';
 import '../habits/habits_store.dart';
 import '../info/info_store.dart';
@@ -36,6 +38,7 @@ class TodayPage extends StatelessWidget {
     final settings = context.watch<SettingsStore>().value;
     final reminders = context.watch<RemindersStore>();
     final habits = context.watch<HabitsStore>().items;
+    final finance = context.watch<FinanceStore>();
     final info = context.watch<InfoStore>();
     final news = context.watch<NewsStore>().visible.take(4).toList();
     final holiday = settings.calendar.holidayName(now);
@@ -113,6 +116,13 @@ class TodayPage extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Column(children: [for (final h in habits) HabitCard(habit: h, compact: true)]),
                 ),
+              ],
+              if (finance.txs.isNotEmpty || finance.accounts.length > 1) ...[
+                _Section(
+                  title: 'Finanças',
+                  onMore: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FinancePage())),
+                ),
+                const FinanceTodayCard(),
               ],
               _Section(title: 'Curiosidade do dia', onMore: () => tabIndex.value = 3),
               Padding(

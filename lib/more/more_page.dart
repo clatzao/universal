@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../finance/finance_page.dart';
 import '../settings/settings_page.dart';
 import '../update/update_ui.dart';
 import '../update/updater.dart';
@@ -29,7 +30,6 @@ const _soon = [
     'Carreira de futebol (estilo New Star Soccer / Soccer Champs)',
     'Desafio diário, recordes e modo contra alguém',
   ]),
-  _Soon('Finanças', Icons.account_balance_wallet, ['Gastos', 'Contas fixas', 'Assinaturas', 'Orçamento']),
   _Soon('Notas e listas', Icons.checklist, ['Notas rápidas', 'Listas de compras e tarefas']),
   _Soon('Ferramentas', Icons.build, ['Conversor', 'Pomodoro', 'Dividir conta', 'QR code']),
 ];
@@ -42,6 +42,16 @@ class MorePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Mais')),
       body: ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 24), children: [
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.account_balance_wallet_outlined),
+            title: const Text('Finanças'),
+            subtitle: const Text('Gastos, cartão, orçamentos, contas fixas e metas'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FinancePage())),
+          ),
+        ),
+        const SizedBox(height: 8),
         Card(
           child: Column(children: [
             ListTile(
