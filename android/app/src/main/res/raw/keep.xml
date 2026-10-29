@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Impede que o R8/shrinker remova os sons (usados só por nome nas notificações). -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/som_*,@drawable/ic_stat_notify" />
