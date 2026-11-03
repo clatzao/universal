@@ -1,10 +1,18 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../core/format.dart';
+import '../core/system.dart';
 import '../core/theme.dart';
+import 'photo_qr.dart';
 
 /// Só links web comuns ganham o botão de abrir: o conteúdo de um QR code não é confiável.
 Uri? webLinkIn(String text) {
@@ -14,24 +22,246 @@ Uri? webLinkIn(String text) {
 }
 
 class QrPage extends StatelessWidget {
-  const QrPage({super.key});
+  static const readTab = 2;
+
+  final PhotoHost host;
+  final int initialTab;
+
+  const QrPage({super.key, this.host = const PhotoHost(), this.initialTab = 0});
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
+      initialIndex: initialTab,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('QR code'),
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Criar'),
+              Tab(text: 'Foto'),
               Tab(text: 'Ler'),
             ],
           ),
         ),
-        body: const TabBarView(physics: NeverScrollableScrollPhysics(), children: [_Create(), _Read()]),
+        body: TabBarView(
+          physics: const NeverScrollableScrollPhysics(),
+          children: [const _Create(), _Photo(host), const _Read()],
+        ),
       ),
+    );
+  }
+}
+
+/// PNG do código, com fundo branco e margem para qualquer leitor conseguir ler.
+Future<Uint8List> qrPng(String data, {int size = 1024}) async {
+  final margin = size / 16;
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder)..drawColor(Colors.white, BlendMode.src);
+  canvas.translate(margin, margin);
+  QrPainter(data: data, version: QrVersions.auto, gapless: true).paint(canvas, Size.square(size - margin * 2));
+  final image = await recorder.endRecording().toImage(size, size);
+  final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+  image.dispose();
+  return bytes!.buffer.asUint8List();
+}
+
+class _QrFileButtons extends StatelessWidget {
+  final String data;
+
+  const _QrFileButtons(this.data);
+
+  void _say(BuildContext context, String message) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+
+  Future<void> _save(BuildContext context) async {
+    try {
+      final saved = await SystemInfo.saveFile('qr-code.png', await qrPng(data), type: 'image/png');
+      if (saved && context.mounted) _say(context, 'Imagem salva');
+    } catch (_) {
+      if (context.mounted) _say(context, 'Não foi possível salvar a imagem.');
+    }
+  }
+
+  Future<void> _share(BuildContext context) async {
+    try {
+      final file = File('${(await getTemporaryDirectory()).path}/qr-code.png');
+      await file.writeAsBytes(await qrPng(data));
+      await SharePlus.instance.share(ShareParams(files: [XFile(file.path, mimeType: 'image/png')]));
+    } catch (_) {
+      if (context.mounted) _say(context, 'Não foi possível compartilhar a imagem.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: OutlinedButton.icon(
+          onPressed: () => _save(context),
+          icon: const Icon(Icons.save_alt),
+          label: const Text('Salvar'),
+        ),
+      ),
+      const SizedBox(width: 8),
+      Expanded(
+        child: OutlinedButton.icon(
+          onPressed: () => _share(context),
+          icon: const Icon(Icons.share_outlined),
+          label: const Text('Compartilhar'),
+        ),
+      ),
+    ],
+  );
+}
+
+class _Photo extends StatefulWidget {
+  final PhotoHost host;
+
+  const _Photo(this.host);
+
+  @override
+  State<_Photo> createState() => _PhotoState();
+}
+
+class _PhotoState extends State<_Photo> with AutomaticKeepAliveClientMixin {
+  int hours = 24;
+  Uint8List? photo;
+  Uri? link;
+  DateTime? expires;
+  bool working = false;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  void _say(String message) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+
+  Future<void> _pick() async {
+    setState(() => working = true);
+    try {
+      final bytes = await SystemInfo.openFile(type: 'image/*');
+      if (bytes == null) return;
+      final prepared = await widget.host.prepare(bytes);
+      if (mounted) setState(() => photo = prepared);
+    } on PhotoFormatError {
+      if (mounted) _say('Não foi possível ler essa imagem. Tente uma foto em JPG ou PNG.');
+    } catch (_) {
+      if (mounted) _say('Não foi possível abrir o arquivo.');
+    } finally {
+      if (mounted) setState(() => working = false);
+    }
+  }
+
+  Future<void> _send() async {
+    setState(() => working = true);
+    try {
+      final url = await widget.host.upload(photo!, hours);
+      if (!mounted) return;
+      setState(() {
+        link = url;
+        expires = DateTime.now().add(Duration(hours: hours));
+        photo = null;
+      });
+    } on PhotoUploadError {
+      if (mounted) _say('Não foi possível enviar a foto. Confira a internet e tente de novo.');
+    } finally {
+      if (mounted) setState(() => working = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final t = Theme.of(context).textTheme;
+    final muted = t.bodySmall?.copyWith(color: AppTheme.textMuted);
+    final url = link;
+    if (url != null) {
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              child: QrImageView(data: url.toString(), size: 240, backgroundColor: Colors.white),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Funciona até ${friendlyWhen(expires!)}. Depois disso, a foto é apagada e o código para de abrir.',
+            textAlign: TextAlign.center,
+            style: t.bodyMedium,
+          ),
+          const SizedBox(height: 6),
+          Text('Quem tiver o código ou o link consegue ver a foto.', textAlign: TextAlign.center, style: muted),
+          const SizedBox(height: 16),
+          _QrFileButtons(url.toString()),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () => launchUrl(url, mode: LaunchMode.externalApplication),
+            icon: const Icon(Icons.open_in_new),
+            label: const Text('Abrir foto'),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: url.toString()));
+              _say('Link copiado');
+            },
+            icon: const Icon(Icons.copy),
+            label: const Text('Copiar link'),
+          ),
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            onPressed: () => setState(() => link = null),
+            icon: const Icon(Icons.add_photo_alternate_outlined),
+            label: const Text('Nova foto'),
+          ),
+        ],
+      );
+    }
+    final picked = photo;
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text('Crie um código que abre uma foto no celular de quem ler.', style: t.bodyMedium),
+        const SizedBox(height: 8),
+        Text(
+          'A foto será enviada para $photoHostName e ficará pública para quem tiver o link. '
+          'Ela não pode ser apagada antes do prazo.',
+          style: t.bodySmall?.copyWith(color: AppTheme.negative),
+        ),
+        const SizedBox(height: 16),
+        Text('O código funciona por', style: t.titleSmall),
+        const SizedBox(height: 8),
+        SegmentedButton<int>(
+          segments: [for (final h in photoLifetimes) ButtonSegment(value: h, label: Text('$h h'))],
+          selected: {hours},
+          showSelectedIcon: false,
+          onSelectionChanged: working ? null : (s) => setState(() => hours = s.first),
+        ),
+        const SizedBox(height: 16),
+        if (working) ...[const LinearProgressIndicator(), const SizedBox(height: 16)],
+        if (picked != null) ...[
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Image.memory(picked, height: 220, fit: BoxFit.contain),
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: working ? null : _send,
+            icon: const Icon(Icons.cloud_upload_outlined),
+            label: const Text('Enviar e criar código'),
+          ),
+          const SizedBox(height: 8),
+        ],
+        (picked == null ? FilledButton.icon : OutlinedButton.icon)(
+          onPressed: working ? null : _pick,
+          icon: const Icon(Icons.add_photo_alternate_outlined),
+          label: Text(picked == null ? 'Escolher foto' : 'Trocar foto'),
+        ),
+      ],
     );
   }
 }
@@ -66,7 +296,7 @@ class _CreateState extends State<_Create> {
           decoration: const InputDecoration(labelText: 'Texto ou link'),
         ),
         const SizedBox(height: 24),
-        if (text.isNotEmpty)
+        if (text.isNotEmpty) ...[
           Center(
             child: Container(
               padding: const EdgeInsets.all(16),
@@ -74,8 +304,10 @@ class _CreateState extends State<_Create> {
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
               child: QrImageView(data: text, size: 240, backgroundColor: Colors.white),
             ),
-          )
-        else
+          ),
+          const SizedBox(height: 16),
+          _QrFileButtons(text),
+        ] else
           Text(
             'Digite algo para gerar o código.',
             textAlign: TextAlign.center,

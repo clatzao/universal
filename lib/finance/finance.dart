@@ -124,6 +124,9 @@ class Tx {
   /// Gerado por uma conta fixa.
   String? fixedId;
 
+  /// Marca de um lançamento importado de extrato, para não importar duas vezes.
+  String? importId;
+
   Tx({
     required this.id,
     required this.kind,
@@ -137,6 +140,7 @@ class Tx {
     this.installments = 1,
     this.groupId,
     this.fixedId,
+    this.importId,
   });
 
   String get title {
@@ -157,6 +161,7 @@ class Tx {
     'installments': installments,
     'groupId': groupId,
     'fixedId': fixedId,
+    'importId': importId,
   };
 
   factory Tx.fromJson(Map<String, dynamic> j) => Tx(
@@ -172,6 +177,7 @@ class Tx {
     installments: (j['installments'] as num?)?.toInt() ?? 1,
     groupId: j['groupId'] as String?,
     fixedId: j['fixedId'] as String?,
+    importId: j['importId'] as String?,
   );
 }
 

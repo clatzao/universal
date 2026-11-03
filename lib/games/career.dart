@@ -105,6 +105,68 @@ const _attackScenes = [
       assist: true,
     ),
   ]),
+  PlayScene('Pênalti a seu favor no fim do jogo. O estádio inteiro olha para você.', [
+    PlayOption(
+      'Bater forte no meio',
+      Skill.finalizacao,
+      6,
+      'O goleiro pula e a bola entra. Gol!',
+      'O goleiro fica parado e defende.',
+      goal: true,
+    ),
+    PlayOption(
+      'Colocar no canto',
+      Skill.finalizacao,
+      12,
+      'No cantinho, sem chance. Gol!',
+      'A bola bate na trave.',
+      goal: true,
+    ),
+    PlayOption(
+      'Dar a cobrança ao capitão',
+      Skill.passe,
+      -6,
+      'Ele converte e agradece a confiança.',
+      'Ele perde, e a torcida reclama.',
+    ),
+  ]),
+  PlayScene('Cruzamento alto na área, e o zagueiro sobe junto com você.', [
+    PlayOption('Cabecear para o gol', Skill.fisico, 16, 'Você sobe mais alto. Gol!', 'A bola raspa e sai.', goal: true),
+    PlayOption(
+      'Ajeitar de cabeça',
+      Skill.passe,
+      10,
+      'Ajeitada perfeita, e o companheiro marca!',
+      'A bola fica com a defesa.',
+      assist: true,
+    ),
+    PlayOption(
+      'Segurar o zagueiro',
+      Skill.defesa,
+      4,
+      'Você abre espaço para a sobra.',
+      'O juiz marca falta de ataque.',
+    ),
+  ]),
+  PlayScene('O goleiro adversário está adiantado e a bola sobra perto do meio-campo.', [
+    PlayOption(
+      'Tentar o chute de cobertura',
+      Skill.finalizacao,
+      34,
+      'Por cima do goleiro! Que golaço!',
+      'A bola sai longe do gol.',
+      goal: true,
+    ),
+    PlayOption(
+      'Levar até a área',
+      Skill.fisico,
+      14,
+      'Você dribla o goleiro e toca para o gol!',
+      'O goleiro volta a tempo.',
+      goal: true,
+    ),
+    PlayOption('Tocar para trás', Skill.passe, -4, 'O time mantém a posse.', 'O passe sai fraco.'),
+  ]),
 ];
 
 const _midScenes = [
@@ -145,6 +207,49 @@ const _midScenes = [
     ),
     PlayOption('Dar o combate', Skill.defesa, 6, 'Você recupera a bola.', 'Você faz falta perigosa.'),
   ]),
+  PlayScene('Falta perto da área: a cobrança é sua.', [
+    PlayOption(
+      'Bater direto',
+      Skill.finalizacao,
+      24,
+      'Por cima da barreira. Gol!',
+      'A bola explode na barreira.',
+      goal: true,
+    ),
+    PlayOption(
+      'Cruzar na área',
+      Skill.passe,
+      8,
+      'Na cabeça do atacante: assistência!',
+      'A defesa afasta.',
+      assist: true,
+    ),
+    PlayOption('Rolar para o lado', Skill.passe, -6, 'O time ganha um bom ângulo.', 'A jogada não engrena.'),
+  ]),
+  PlayScene('Seu time ganha a bola e o camisa 9 já corre em profundidade.', [
+    PlayOption(
+      'Passe em profundidade',
+      Skill.passe,
+      12,
+      'Na medida para ele: assistência!',
+      'O goleiro sai e fica com a bola.',
+      assist: true,
+    ),
+    PlayOption(
+      'Tabelar e entrar na área',
+      Skill.fisico,
+      18,
+      'Tabela perfeita, e você marca!',
+      'A zaga corta.',
+      goal: true,
+    ),
+    PlayOption('Esperar o time subir', Skill.defesa, -4, 'O time se organiza com calma.', 'O adversário recompõe.'),
+  ]),
+  PlayScene('O adversário sai rápido, e você é o último homem do meio-campo.', [
+    PlayOption('Fazer a falta tática', Skill.defesa, 2, 'Falta inteligente, sem cartão.', 'O juiz mostra o amarelo.'),
+    PlayOption('Tentar o desarme', Skill.defesa, 16, 'Desarme limpo, e o time volta a atacar.', 'Ele escapa por você.'),
+    PlayOption('Correr na cobertura', Skill.fisico, 8, 'Você alcança e fecha o espaço.', 'Falta fôlego para alcançar.'),
+  ]),
 ];
 
 const _defenseScenes = [
@@ -183,6 +288,116 @@ const _defenseScenes = [
       'Boa leitura: nenhum perigo no contra-ataque.',
       'Mesmo assim, o contra-ataque assusta.',
     ),
+  ]),
+  PlayScene('Cruzamento perigoso na sua área, com o centroavante nas suas costas.', [
+    PlayOption('Afastar de cabeça', Skill.fisico, 6, 'Você sobe e tira de perigo.', 'A bola passa e assusta.'),
+    PlayOption('Antecipar o lance', Skill.defesa, 14, 'Antecipação perfeita!', 'Você erra o tempo da bola.'),
+    PlayOption(
+      'Dominar e lançar',
+      Skill.passe,
+      26,
+      'Domina, lança, e sai o gol: assistência!',
+      'Você perde a bola em lugar perigoso.',
+      assist: true,
+    ),
+  ]),
+  PlayScene('Dois atacantes vêm contra você, e o goleiro grita para você decidir.', [
+    PlayOption('Ir no portador da bola', Skill.defesa, 16, 'Bote certo: bola recuperada.', 'Ele toca e o outro chuta.'),
+    PlayOption(
+      'Fechar o passe',
+      Skill.defesa,
+      8,
+      'Ele chuta sem ângulo e o goleiro pega.',
+      'Ele acha espaço para o chute.',
+    ),
+    PlayOption(
+      'Recuar até a área',
+      Skill.fisico,
+      4,
+      'Você ganha tempo para a defesa voltar.',
+      'O adversário chega perto.',
+    ),
+  ]),
+  PlayScene('Bola parada no ataque: a zaga adversária esqueceu de marcar você.', [
+    PlayOption(
+      'Chutar de primeira',
+      Skill.finalizacao,
+      22,
+      'Pega de primeira. Gol de zagueiro!',
+      'A bola vai para fora.',
+      goal: true,
+    ),
+    PlayOption(
+      'Escorar para o meio',
+      Skill.passe,
+      10,
+      'Escorou, e o atacante só empurrou: assistência!',
+      'Ninguém chega na bola.',
+      assist: true,
+    ),
+    PlayOption('Dominar com calma', Skill.fisico, 2, 'Você segura e o time mantém o ataque.', 'A zaga chega e tira.'),
+  ]),
+];
+
+/// Lances por partida, sorteados entre os da posição.
+const matchPlays = 3;
+
+/// Evento fora de campo a cada [eventEveryMatches] partidas.
+const eventEveryMatches = 4;
+
+/// Uma escolha fora de campo. Dinheiro é contado em salários da divisão atual.
+class EventOption {
+  final String label;
+  final String result;
+  final int energy;
+  final int salaries;
+  final Skill? skill;
+  final int gain;
+
+  const EventOption(this.label, this.result, {this.energy = 0, this.salaries = 0, this.skill, this.gain = 0});
+}
+
+class CareerEvent {
+  final String text;
+  final List<EventOption> options;
+
+  const CareerEvent(this.text, this.options);
+}
+
+const careerEvents = [
+  CareerEvent('Uma marca de chuteiras oferece um contrato, mas quer você nas gravações durante a folga.', [
+    EventOption('Aceitar', 'Bom dinheiro, mas a folga acabou.', salaries: 2, energy: -20),
+    EventOption('Recusar', 'Você preferiu descansar.', energy: 15),
+  ]),
+  CareerEvent('O técnico chama quem quiser para um treino extra de finalização.', [
+    EventOption('Ficar', 'Mais uma hora de treino valeu a pena.', energy: -20, skill: Skill.finalizacao, gain: 2),
+    EventOption('Ir para casa', 'Você guardou energia para o próximo jogo.', energy: 10),
+  ]),
+  CareerEvent('O elenco marcou um churrasco na véspera do treino.', [
+    EventOption('Ir', 'O clima no grupo melhorou, mas o sono ficou curto.', energy: -10),
+    EventOption('Ficar em casa', 'Noite tranquila e energia em dia.', energy: 15),
+  ]),
+  CareerEvent('Um preparador físico particular oferece um mês de acompanhamento.', [
+    EventOption('Contratar', 'O investimento apareceu nos testes físicos.', salaries: -1, skill: Skill.fisico, gain: 3),
+    EventOption('Dispensar', 'Você seguiu com a preparação do clube.'),
+  ]),
+  CareerEvent('Você sente um incômodo na coxa antes do treino.', [
+    EventOption('Tratar', 'Dois dias de cuidado e a dor passou.', energy: 25),
+    EventOption(
+      'Treinar assim mesmo',
+      'Você treinou, mas terminou no limite.',
+      energy: -25,
+      skill: Skill.defesa,
+      gain: 1,
+    ),
+  ]),
+  CareerEvent('O time da sua cidade pede ajuda para reformar o campo da base.', [
+    EventOption('Doar', 'A molecada agradeceu, e você voltou inspirado.', salaries: -1, energy: 20),
+    EventOption('Agora não', 'Você prometeu ajudar mais tarde.'),
+  ]),
+  CareerEvent('Um meia veterano se oferece para ensinar a você a ler o jogo.', [
+    EventOption('Aceitar', 'Você passou a enxergar passes novos.', energy: -15, skill: Skill.passe, gain: 2),
+    EventOption('Agradecer e descansar', 'Você preferiu poupar as pernas.', energy: 10),
   ]),
 ];
 
@@ -227,6 +442,28 @@ class SeasonSummary {
     this.movement,
     this.newClub,
   );
+
+  Map<String, dynamic> toJson() => {
+    'season': season,
+    'division': division,
+    'club': club,
+    'average': average,
+    'goals': goals,
+    'assists': assists,
+    'movement': movement,
+    'newClub': newClub,
+  };
+
+  factory SeasonSummary.fromJson(Map<String, dynamic> j) => SeasonSummary(
+    (j['season'] as num?)?.toInt() ?? 1,
+    j['division'] as String? ?? '',
+    j['club'] as String? ?? '',
+    (j['average'] as num?)?.toDouble() ?? 0,
+    (j['goals'] as num?)?.toInt() ?? 0,
+    (j['assists'] as num?)?.toInt() ?? 0,
+    (j['movement'] as num?)?.toInt() ?? 0,
+    j['newClub'] as String? ?? '',
+  );
 }
 
 class CareerState {
@@ -249,6 +486,7 @@ class CareerState {
   int totalMatches;
   int promotions;
   bool retired;
+  List<SeasonSummary> history;
 
   CareerState({
     required this.name,
@@ -270,7 +508,8 @@ class CareerState {
     this.totalMatches = 0,
     this.promotions = 0,
     this.retired = false,
-  });
+    List<SeasonSummary>? history,
+  }) : history = history ?? [];
 
   factory CareerState.start(String name, Position position, Random random) {
     final base = {
@@ -308,6 +547,19 @@ class CareerState {
   }
 
   void rest() => energy = min(100, energy + 40);
+
+  /// O evento da semana, quando houver, depois de cada [eventEveryMatches] partidas.
+  CareerEvent? nextEvent(Random random) => totalMatches > 0 && totalMatches % eventEveryMatches == 0 && !retired
+      ? careerEvents[random.nextInt(careerEvents.length)]
+      : null;
+
+  bool canChoose(EventOption o) => money + o.salaries * salary >= 0;
+
+  void applyEvent(EventOption o) {
+    energy = (energy + o.energy).clamp(0, 100);
+    money += o.salaries * salary;
+    if (o.skill != null) skills[o.skill!] = min(99, skill(o.skill!) + o.gain);
+  }
 
   /// Chance de 5% a 95%: habilidade contra a força da divisão e o risco do lance. Cansaço atrapalha.
   double chance(PlayOption o) {
@@ -375,6 +627,7 @@ class CareerState {
       movement,
       club,
     );
+    history.add(summary);
     age++;
     if (age > 32) {
       for (final s in Skill.values) {
@@ -423,6 +676,7 @@ class CareerState {
     'totalMatches': totalMatches,
     'promotions': promotions,
     'retired': retired,
+    'history': [for (final s in history) s.toJson()],
   };
 
   factory CareerState.fromJson(Map<String, dynamic> j) {
@@ -448,6 +702,9 @@ class CareerState {
       totalMatches: n('totalMatches', 0),
       promotions: n('promotions', 0),
       retired: j['retired'] as bool? ?? false,
+      history: [
+        for (final s in (j['history'] as List?) ?? const []) SeasonSummary.fromJson((s as Map).cast<String, dynamic>()),
+      ],
     );
   }
 }

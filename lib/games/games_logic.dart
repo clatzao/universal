@@ -315,8 +315,27 @@ const _firstNames = [
   'Augusto',
   'Teresa',
   'Nestor',
+  'Iolanda',
+  'Rubens',
+  'Dalva',
+  'Hélio',
+  'Yara',
+  'Silvério',
 ];
-const _jobs = ['jardineiro', 'cozinheira', 'motorista', 'contadora', 'professor', 'fotógrafa', 'médico', 'arquiteta'];
+const _jobs = [
+  'jardineiro',
+  'cozinheira',
+  'motorista',
+  'contadora',
+  'professor',
+  'fotógrafa',
+  'médico',
+  'arquiteta',
+  'relojoeiro',
+  'advogada',
+  'músico',
+  'florista',
+];
 const _crimes = [
   ('O colar de esmeraldas', 'sumiu do cofre do casarão'),
   ('O quadro mais caro da galeria', 'desapareceu antes da abertura'),
@@ -324,9 +343,24 @@ const _crimes = [
   ('O troféu do clube', 'sumiu da sala de honra'),
   ('O manuscrito raro', 'não está mais na biblioteca'),
   ('As joias da família', 'foram levadas durante o jantar'),
+  ('O relógio de ouro do avô', 'sumiu da cristaleira'),
+  ('A partitura inédita', 'desapareceu do conservatório'),
+  ('O caixa do festival', 'estava vazio pela manhã'),
+  ('O mapa antigo do museu', 'foi trocado por uma cópia'),
+  ('A coleção de moedas raras', 'sumiu do escritório'),
+  ('O vinho mais antigo da adega', 'não está mais na prateleira'),
+  ('O diário do fundador', 'foi tirado do arquivo da cidade'),
+  ('A escultura de bronze', 'sumiu do saguão do hotel'),
 ];
-const _places = ['na cozinha', 'no jardim', 'na biblioteca', 'na garagem'];
-const _items = ['um casaco verde', 'um chapéu preto', 'luvas vermelhas', 'óculos escuros'];
+const _places = ['na cozinha', 'no jardim', 'na biblioteca', 'na garagem', 'no porão', 'na varanda'];
+const _items = [
+  'um casaco verde',
+  'um chapéu preto',
+  'luvas vermelhas',
+  'óculos escuros',
+  'um cachecol azul',
+  'botas marrons',
+];
 const _hours = ['antes das 20h', 'entre 20h e 21h', 'depois das 21h'];
 const _witnesses = ['A vizinha', 'O vigia', 'A faxineira', 'O entregador', 'A sobrinha', 'O porteiro'];
 

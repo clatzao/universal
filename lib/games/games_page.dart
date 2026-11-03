@@ -9,6 +9,7 @@ import '../core/theme.dart';
 import 'career.dart';
 import 'games_logic.dart';
 import 'games_store.dart';
+import 'quick_games.dart';
 
 class GamesPage extends StatelessWidget {
   const GamesPage({super.key});
@@ -76,6 +77,21 @@ class GamesPage extends StatelessWidget {
             Icons.sports_soccer,
             () => const CareerPage(),
           ),
+          tile(
+            'contas',
+            'Contas rápidas',
+            'Quantas contas você resolve em 45 segundos',
+            Icons.calculate_outlined,
+            () => const MathGamePage(),
+          ),
+          tile(
+            'memoria',
+            'Jogo da memória',
+            'Encontre os pares com poucas jogadas',
+            Icons.grid_view,
+            () => const MemoryGamePage(),
+          ),
+          tile('reflexo', 'Reflexo', 'Toque assim que a tela mudar de cor', Icons.bolt, () => const ReflexGamePage()),
         ],
       ),
     );
@@ -368,10 +384,7 @@ class _WordDayPageState extends State<WordDayPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      g.guess.toUpperCase(),
-                      style: const TextStyle(letterSpacing: 2, fontWeight: FontWeight.w600),
-                    ),
+                    Text(g.guess.toUpperCase(), style: const TextStyle(letterSpacing: 2, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 2),
                     Text(
                       '${g.placed} no lugar · ${g.present} fora do lugar',
@@ -597,7 +610,73 @@ class _CareerPageState extends State<CareerPage> {
           '${c.club} ${report.goalsFor} x ${report.goalsAgainst} ${report.opponent}. Sua nota: ${report.rating.toStringAsFixed(1).replaceAll('.', ',')}.',
     );
     await store.save();
+    if (!mounted) return;
+    final event = c.nextEvent(random);
+    if (event != null) await _showEvent(c, event);
     if (c.seasonOver && mounted) await _closeSeason(c);
+  }
+
+  Future<void> _showEvent(CareerState c, CareerEvent event) async {
+    final choice = await showDialog<EventOption>(
+      context: context,
+      barrierDismissible: false,
+      builder: (d) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          title: const Text('Fora de campo'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(event.text),
+              const SizedBox(height: 16),
+              for (final o in event.options)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: OutlinedButton(
+                    onPressed: c.canChoose(o) ? () => Navigator.pop(d, o) : null,
+                    child: Text(c.canChoose(o) ? o.label : '${o.label} (sem dinheiro)', textAlign: TextAlign.center),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (choice == null || !mounted) return;
+    c.applyEvent(choice);
+    setState(() => lastEvent = '${lastEvent ?? ''}\n${choice.result}'.trim());
+    await store.save();
+  }
+
+  Widget _history(CareerState c) {
+    final t = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 18),
+        Text('Temporadas', style: t.titleMedium),
+        const SizedBox(height: 8),
+        for (final s in c.history.reversed)
+          Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              dense: true,
+              leading: Icon(switch (s.movement) {
+                1 => Icons.arrow_upward,
+                -1 => Icons.arrow_downward,
+                _ => Icons.remove,
+              }),
+              title: Text('${s.season}ª · ${s.club}'),
+              subtitle: Text(
+                '${s.division} · média ${s.average.toStringAsFixed(1).replaceAll('.', ',')} · '
+                '${s.goals} gols · ${s.assists} assist.',
+                style: const TextStyle(color: AppTheme.textMuted),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 
   Future<void> _closeSeason(CareerState c) async {
@@ -691,6 +770,7 @@ class _CareerPageState extends State<CareerPage> {
           icon: const Icon(Icons.refresh),
           label: const Text('Nova carreira'),
         ),
+        if (c.history.isNotEmpty) _history(c),
       ],
     );
   }
@@ -777,6 +857,7 @@ class _CareerPageState extends State<CareerPage> {
               ),
             ),
           ),
+        if (c.history.isNotEmpty) _history(c),
       ],
     );
   }
@@ -795,7 +876,9 @@ class MatchPage extends StatefulWidget {
 
 class _MatchPageState extends State<MatchPage> {
   late final String opponent = widget.career.opponentName(widget.random);
-  late final List<PlayScene> scenes = [...scenesFor(widget.career.position)]..shuffle(widget.random);
+  late final List<PlayScene> scenes = ([
+    ...scenesFor(widget.career.position),
+  ]..shuffle(widget.random)).take(matchPlays).toList();
   int index = 0;
   int goals = 0;
   int assists = 0;

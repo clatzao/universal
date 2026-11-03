@@ -16,16 +16,40 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterFragmentActivity() {
     private var pendingResult: MethodChannel.Result? = null
     private var pendingBytes: ByteArray? = null
+    private var pendingShortcut: String? = null
+    private var channel: MethodChannel? = null
 
     private companion object {
         const val REQUEST_SAVE = 4101
         const val REQUEST_OPEN = 4102
+        const val EXTRA_SHORTCUT = "shortcut"
+    }
+
+    // Reabrir pela lista de recentes entrega o intent antigo: não pode repetir o atalho.
+    private fun shortcutIn(intent: Intent?): String? {
+        if (intent == null || intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0) return null
+        return intent.getStringExtra(EXTRA_SHORTCUT)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        val shortcut = shortcutIn(intent) ?: return
+        intent.removeExtra(EXTRA_SHORTCUT)
+        channel?.invokeMethod("shortcut", shortcut)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "universal/system").setMethodCallHandler { call, result ->
+        pendingShortcut = shortcutIn(intent)
+        intent?.removeExtra(EXTRA_SHORTCUT)
+        val systemChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "universal/system")
+        channel = systemChannel
+        systemChannel.setMethodCallHandler { call, result ->
             when (call.method) {
+                "takeShortcut" -> {
+                    result.success(pendingShortcut)
+                    pendingShortcut = null
+                }
                 "canUseFullScreenIntent" -> result.success(canUseFullScreenIntent())
                 "openFullScreenSettings" -> {
                     openFullScreenSettings()
@@ -52,7 +76,7 @@ class MainActivity : FlutterFragmentActivity() {
                     pendingBytes = call.argument<ByteArray>("bytes")
                     val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
                         addCategory(Intent.CATEGORY_OPENABLE)
-                        type = "application/octet-stream"
+                        type = call.argument<String>("type") ?: "application/octet-stream"
                         putExtra(Intent.EXTRA_TITLE, call.argument<String>("name"))
                     }
                     startActivityForResult(intent, REQUEST_SAVE)
@@ -61,7 +85,7 @@ class MainActivity : FlutterFragmentActivity() {
                     pendingResult = result
                     val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                         addCategory(Intent.CATEGORY_OPENABLE)
-                        type = "*/*"
+                        type = call.argument<String>("type") ?: "*/*"
                     }
                     startActivityForResult(intent, REQUEST_OPEN)
                 }

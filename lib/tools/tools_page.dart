@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../core/theme.dart';
 import '../finance/finance.dart' show brl, parseCents;
 import '../info/info_store.dart';
+import 'coin_flip.dart';
 import 'qr_page.dart';
 import 'tools_logic.dart';
 import 'vault_page.dart';
@@ -793,14 +794,7 @@ class _DrawPageState extends State<DrawPage> {
   ];
 
   List<Widget> _coin() => [
-    FilledButton.icon(
-      onPressed: () {
-        HapticFeedback.mediumImpact();
-        setState(() => coin = random.nextBool() ? 'Cara' : 'Coroa');
-      },
-      icon: const Icon(Icons.monetization_on_outlined),
-      label: const Text('Jogar a moeda'),
-    ),
+    CoinFlip(random: random, result: coin, onResult: (v) => setState(() => coin = v)),
     if (coin != null) _Result('Resultado', coin!),
   ];
 }

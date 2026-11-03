@@ -4,6 +4,15 @@ import '../core/json_store.dart';
 import '../reminders/holidays.dart';
 import '../reminders/recurrence.dart';
 
+const backupMaxAgeDays = 30;
+const backupSnoozeDays = 14;
+
+/// O aviso aparece sem nenhum backup ou com o último antigo, salvo se a pessoa adiou.
+bool backupIsDue({required DateTime? last, required DateTime? snoozedUntil, required DateTime now}) {
+  if (snoozedUntil != null && now.isBefore(snoozedUntil)) return false;
+  return last == null || now.difference(last).inDays >= backupMaxAgeDays;
+}
+
 /// Configurações do app (arquivo settings.json).
 class Settings {
   String? cityName;
@@ -26,6 +35,7 @@ class Settings {
   bool autoUpdate;
   DateTime? lastUpdateCheck;
   DateTime? lastBackup;
+  DateTime? backupSnoozedUntil;
 
   int nextNid;
 
@@ -46,6 +56,7 @@ class Settings {
     this.autoUpdate = true,
     this.lastUpdateCheck,
     this.lastBackup,
+    this.backupSnoozedUntil,
     this.nextNid = 10,
   });
 
@@ -71,6 +82,7 @@ class Settings {
         'autoUpdate': autoUpdate,
         'lastUpdateCheck': lastUpdateCheck?.toIso8601String(),
         'lastBackup': lastBackup?.toIso8601String(),
+        'backupSnoozedUntil': backupSnoozedUntil?.toIso8601String(),
         'nextNid': nextNid,
       };
 
@@ -93,6 +105,7 @@ class Settings {
         autoUpdate: (j['autoUpdate'] as bool?) ?? true,
         lastUpdateCheck: j['lastUpdateCheck'] == null ? null : DateTime.parse(j['lastUpdateCheck'] as String),
         lastBackup: DateTime.tryParse(j['lastBackup'] as String? ?? ''),
+        backupSnoozedUntil: DateTime.tryParse(j['backupSnoozedUntil'] as String? ?? ''),
         nextNid: (j['nextNid'] as int?) ?? 10,
       );
 

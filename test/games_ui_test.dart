@@ -181,7 +181,11 @@ void main() {
     await tester.tap(find.text('Jogar a partida da semana'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Lance 1 de 2'), findsOneWidget);
+    expect(find.text('Lance 1 de 3'), findsOneWidget);
+    await tester.tap(find.byType(OutlinedButton).first);
+    await tester.pump();
+    await tester.tap(find.text('Próximo lance'));
+    await tester.pump();
     await tester.tap(find.byType(OutlinedButton).first);
     await tester.pump();
     await tester.tap(find.text('Próximo lance'));
@@ -207,10 +211,10 @@ void main() {
     await tester.tap(find.text('Jogar a partida da semana'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    for (var i = 0; i < 2; i++) {
+    for (var i = 0; i < matchPlays; i++) {
       await tester.tap(find.byType(OutlinedButton).first);
       await tester.pump();
-      await tester.tap(find.text(i == 0 ? 'Próximo lance' : 'Ver resultado'));
+      await tester.tap(find.text(i < matchPlays - 1 ? 'Próximo lance' : 'Ver resultado'));
       await tester.pump();
     }
     await tester.pump(const Duration(milliseconds: 500));
@@ -222,6 +226,32 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Veterano se aposentou'), findsOneWidget);
+    expect(find.text('Temporadas'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('carreira: evento fora de campo aparece depois da quarta partida e grava a escolha', (tester) async {
+    final c = CareerState.start('Novato', Position.meia, Random(1))..totalMatches = eventEveryMatches - 1;
+    await store.setCareer(c);
+    await pump(tester, CareerPage(random: Random(4)));
+    await tester.tap(find.text('Jogar a partida da semana'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    for (var i = 0; i < matchPlays; i++) {
+      await tester.tap(find.byType(OutlinedButton).first);
+      await tester.pump();
+      await tester.tap(find.text(i < matchPlays - 1 ? 'Próximo lance' : 'Ver resultado'));
+      await tester.pump();
+    }
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Fora de campo'), findsOneWidget);
+    final buttons = find.descendant(of: find.byType(AlertDialog), matching: find.byType(OutlinedButton));
+    await tester.tap(buttons.last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Fora de campo'), findsNothing);
+    expect(c.totalMatches, eventEveryMatches);
     expect(tester.takeException(), isNull);
   });
 }

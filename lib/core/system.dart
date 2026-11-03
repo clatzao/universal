@@ -24,11 +24,31 @@ class SystemInfo {
   }
 
   /// Abre o seletor de arquivos do Android para salvar. Retorna false se a pessoa cancelar.
-  static Future<bool> saveFile(String name, List<int> bytes) async =>
-      await _channel.invokeMethod<bool>('saveFile', {'name': name, 'bytes': Uint8List.fromList(bytes)}) ?? false;
+  static Future<bool> saveFile(String name, List<int> bytes, {String type = 'application/octet-stream'}) async =>
+      await _channel.invokeMethod<bool>('saveFile', {'name': name, 'bytes': Uint8List.fromList(bytes), 'type': type}) ??
+      false;
 
   /// Abre o seletor de arquivos do Android. Retorna null se a pessoa cancelar.
-  static Future<Uint8List?> openFile() => _channel.invokeMethod<Uint8List>('openFile');
+  static Future<Uint8List?> openFile({String type = '*/*'}) =>
+      _channel.invokeMethod<Uint8List>('openFile', {'type': type});
+
+  /// Atalho do ícone que abriu o app, se houver.
+  static Future<String?> takeShortcut() async {
+    try {
+      return await _channel.invokeMethod<String>('takeShortcut');
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
+  /// Atalhos usados com o app já aberto.
+  static void listenShortcuts(void Function(String name) onShortcut) {
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'shortcut' && call.arguments is String) onShortcut(call.arguments as String);
+    });
+  }
 
   static Future<bool> _ask(String method) async {
     try {

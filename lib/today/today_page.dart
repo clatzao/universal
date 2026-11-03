@@ -3,10 +3,12 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../app.dart';
+import '../backup/backup_page.dart';
 import '../core/format.dart';
 import '../core/theme.dart';
 import '../curiosities/curiosities_page.dart';
 import '../curiosities/facts.dart';
+import '../finance/finance.dart';
 import '../finance/finance_page.dart';
 import '../finance/finance_store.dart';
 import '../habits/habits_page.dart';
@@ -20,6 +22,7 @@ import '../notes/notes_page.dart';
 import '../notes/notes_store.dart';
 import '../reminders/reminders_page.dart';
 import '../reminders/reminders_store.dart';
+import '../search/search_page.dart';
 import '../settings/settings.dart';
 import '../settings/settings_page.dart';
 
@@ -53,6 +56,11 @@ class TodayPage extends StatelessWidget {
     final habitsMet = habits.where((h) => h.metOn(now)).length;
     final t = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
+    final hasData =
+        reminders.items.isNotEmpty ||
+        habits.isNotEmpty ||
+        finance.txs.isNotEmpty ||
+        context.watch<NotesStore>().items.isNotEmpty;
     final reminderTiles = [
       for (final o in pending) ReminderTile(reminder: o.reminder, when: o.at, pending: true),
       for (final o in upcoming.take(8)) ReminderTile(reminder: o.reminder, when: o.at),
@@ -75,8 +83,17 @@ class TodayPage extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
-                child: Text(_greeting(now), style: t.headlineMedium),
+                padding: const EdgeInsets.fromLTRB(20, 6, 12, 0),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(_greeting(now), style: t.headlineMedium)),
+                    IconButton(
+                      tooltip: 'Buscar',
+                      icon: const Icon(Icons.search),
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchPage())),
+                    ),
+                  ],
+                ),
               ),
               if (holiday != null)
                 Padding(
@@ -97,6 +114,9 @@ class TodayPage extends StatelessWidget {
                 ),
               ),
               _QuotesRow(info: info),
+              if (hasData &&
+                  backupIsDue(last: settings.lastBackup, snoozedUntil: settings.backupSnoozedUntil, now: now))
+                _BackupNudge(last: settings.lastBackup),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: Row(
@@ -141,6 +161,8 @@ class TodayPage extends StatelessWidget {
               if (finance.txs.isNotEmpty || finance.accounts.length > 1) ...[
                 _Section(title: 'Finanças', onMore: () => tabIndex.value = Tabs.financas),
                 const FinanceTodayCard(),
+                for (final (category, status) in finance.budgetAlerts(now))
+                  _BudgetAlert(category: category, status: status),
               ],
               _Section(title: 'Curiosidade do dia', onMore: () => tabIndex.value = Tabs.curiosidades),
               Padding(
@@ -157,6 +179,80 @@ class TodayPage extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _BackupNudge extends StatelessWidget {
+  final DateTime? last;
+
+  const _BackupNudge({required this.last});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final when = last;
+    return Card(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 8, 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Faça um backup', style: t.titleSmall),
+            const SizedBox(height: 2),
+            Text(
+              when == null ? 'Seus dados ainda não têm uma cópia.' : 'Seu último backup foi ${ago(when)}.',
+              style: t.bodySmall?.copyWith(color: AppTheme.textMuted),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Wrap(
+                children: [
+                  TextButton(
+                    onPressed: () => context.read<SettingsStore>().update(
+                      (s) => s.backupSnoozedUntil = DateTime.now().add(const Duration(days: backupSnoozeDays)),
+                    ),
+                    child: const Text('Agora não'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupPage())),
+                    child: const Text('Fazer backup'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BudgetAlert extends StatelessWidget {
+  final FinCategory category;
+  final BudgetStatus status;
+
+  const _BudgetAlert({required this.category, required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final over = status.ratio >= 1;
+    return Card(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: ListTile(
+        leading: Icon(category.icon, color: over ? AppTheme.negative : category.color),
+        title: Text(
+          over
+              ? 'Orçamento de ${category.label} estourado'
+              : '${(status.ratio * 100).round()}% do orçamento de ${category.label}',
+        ),
+        subtitle: Text(
+          '${brl(status.spent)} de ${brl(status.limit)}',
+          style: const TextStyle(color: AppTheme.textMuted),
+        ),
+        onTap: () => tabIndex.value = Tabs.financas,
       ),
     );
   }

@@ -9,10 +9,13 @@ import 'package:provider/provider.dart';
 
 import '../app.dart';
 import '../core/format.dart';
+import '../core/system.dart';
 import '../core/theme.dart';
 import 'finance.dart';
 import 'finance_forms.dart';
 import 'finance_store.dart';
+import 'statement.dart';
+import 'statement_page.dart';
 
 class FinancePage extends StatefulWidget {
   const FinancePage({super.key});
@@ -23,6 +26,22 @@ class FinancePage extends StatefulWidget {
 
 class _FinancePageState extends State<FinancePage> {
   DateTime month = monthStart(DateTime.now());
+
+  Future<void> _import() async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final bytes = await SystemInfo.openFile();
+      if (bytes == null || !mounted) return;
+      final lines = parseStatement(bytes);
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => StatementImportPage(lines: lines)));
+    } on StatementFormatError {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Nenhum lançamento encontrado. Use um extrato em OFX ou CSV.')),
+      );
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(content: Text('Não foi possível abrir o arquivo.')));
+    }
+  }
 
   Future<void> _export() async {
     final store = context.read<FinanceStore>();
@@ -74,7 +93,10 @@ class _FinancePageState extends State<FinancePage> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Finanças'),
-          actions: [IconButton(tooltip: 'Exportar', icon: const Icon(Icons.ios_share), onPressed: _export)],
+          actions: [
+            IconButton(tooltip: 'Importar extrato', icon: const Icon(Icons.file_download_outlined), onPressed: _import),
+            IconButton(tooltip: 'Exportar', icon: const Icon(Icons.ios_share), onPressed: _export),
+          ],
           bottom: const TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,

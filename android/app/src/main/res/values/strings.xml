@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_reminder">Novo lembrete</string>
+    <string name="shortcut_note">Nova nota</string>
+    <string name="shortcut_search">Buscar</string>
+    <string name="shortcut_qr">Ler QR code</string>
+</resources>

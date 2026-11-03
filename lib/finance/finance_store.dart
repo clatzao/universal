@@ -3,6 +3,31 @@ import 'package:flutter/foundation.dart';
 import '../core/format.dart';
 import '../core/json_store.dart';
 import 'finance.dart';
+import 'statement.dart';
+
+class ImportCandidate {
+  final DateTime date;
+  final int amount;
+  final TxKind kind;
+  final String description;
+  final String key;
+  final FinCategory category;
+  final bool alreadyImported;
+  final bool looksManual;
+
+  const ImportCandidate(
+    this.date,
+    this.amount,
+    this.kind,
+    this.description,
+    this.key,
+    this.category, {
+    this.alreadyImported = false,
+    this.looksManual = false,
+  });
+
+  bool get selectedByDefault => !alreadyImported && !looksManual;
+}
 
 class BudgetStatus {
   final int limit;
@@ -136,6 +161,15 @@ class FinanceStore extends ChangeNotifier {
     return BudgetStatus(limit, byCategory(m)[c] ?? 0);
   }
 
+  /// Orçamentos do mês a partir de 80% de uso, dos mais estourados aos menos.
+  List<(FinCategory, BudgetStatus)> budgetAlerts(DateTime m) {
+    final out = [
+      for (final c in budgets.keys)
+        if (budget(c, m) case final b? when b.ratio >= 0.8) (c, b),
+    ];
+    return out..sort((a, b) => b.$2.ratio.compareTo(a.$2.ratio));
+  }
+
   // ---------- Cartão ----------
 
   List<Tx> invoiceTxs(Account card, DateTime month) => txs
@@ -232,6 +266,70 @@ class FinanceStore extends ChangeNotifier {
   Future<void> restore(List<Tx> list) async {
     txs.addAll(list);
     await _save();
+  }
+
+  // ---------- Importar extrato ----------
+
+  /// Prepara as linhas para a revisão. Já importadas e iguais a um lançamento manual do mesmo dia
+  /// começam desmarcadas. [invert] serve para extratos de cartão, em que compra vem positiva.
+  List<ImportCandidate> reviewImport(List<StatementLine> lines, String accountId, {bool invert = false}) {
+    final imported = {
+      for (final t in txs)
+        if (t.importId != null) t.importId!,
+    };
+    final manual = [
+      for (final t in txs)
+        if (t.accountId == accountId && t.importId == null && t.kind != TxKind.transfer) t,
+    ];
+    final repeats = <String, int>{};
+    return [
+      for (final line in lines)
+        () {
+          final amount = invert ? -line.amount : line.amount;
+          final kind = amount < 0 ? TxKind.expense : TxKind.income;
+          final base = line.bankId != null
+              ? 'id:${line.bankId}'
+              : '${dayKey(line.date)}|${line.amount}|${line.description}';
+          // Sem identificador do banco, duas compras iguais no mesmo dia continuam sendo duas.
+          final n = repeats[base] = (repeats[base] ?? 0) + 1;
+          final key = '$accountId:$base#$n';
+          final twin = manual.indexWhere(
+            (t) => t.kind == kind && t.amount == amount.abs() && dayOf(t.date) == dayOf(line.date),
+          );
+          if (twin >= 0) manual.removeAt(twin);
+          return ImportCandidate(
+            line.date,
+            amount.abs(),
+            kind,
+            line.description,
+            key,
+            guessCategory(line.description, kind),
+            alreadyImported: imported.contains(key),
+            looksManual: twin >= 0,
+          );
+        }(),
+    ];
+  }
+
+  Future<int> importCandidates(Iterable<ImportCandidate> list, String accountId) async {
+    var count = 0;
+    for (final c in list) {
+      txs.add(
+        Tx(
+          id: newId(),
+          kind: c.kind,
+          amount: c.amount,
+          date: c.date,
+          category: c.category,
+          accountId: accountId,
+          description: c.description,
+          importId: c.key,
+        ),
+      );
+      count++;
+    }
+    await _save();
+    return count;
   }
 
   // ---------- Contas ----------

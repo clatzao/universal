@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'background/background.dart';
+import 'core/system.dart';
 import 'core/theme.dart';
 import 'curiosities/curiosities_page.dart';
 import 'finance/finance_page.dart';
@@ -20,14 +21,19 @@ import 'more/more_page.dart';
 import 'news/news_page.dart';
 import 'news/news_reader.dart';
 import 'news/news_store.dart';
+import 'notes/note.dart';
 import 'notes/notes_page.dart';
+import 'notes/notes_store.dart';
 import 'notify/actions.dart';
 import 'notify/notifications.dart';
 import 'reminders/alarm_screen.dart';
+import 'reminders/reminder_editor.dart';
 import 'reminders/reminders_page.dart';
 import 'reminders/reminders_store.dart';
+import 'search/search_page.dart';
 import 'settings/settings.dart';
 import 'today/today_page.dart';
+import 'tools/qr_page.dart';
 import 'update/update_ui.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
@@ -86,8 +92,11 @@ class _UniversalAppState extends State<UniversalApp> with WidgetsBindingObserver
   }
 
   Future<void> _startup() async {
+    SystemInfo.listenShortcuts(_openShortcut);
+    final shortcut = await SystemInfo.takeShortcut();
+    if (shortcut != null) _openShortcut(shortcut);
     final ctx = navigatorKey.currentContext;
-    if (ctx == null) return;
+    if (ctx == null || !ctx.mounted) return;
     final news = ctx.read<NewsStore>();
     final info = ctx.read<InfoStore>();
     unawaited(info.refresh());
@@ -96,6 +105,21 @@ class _UniversalAppState extends State<UniversalApp> with WidgetsBindingObserver
     }
     unawaited(_foregroundJobs());
     await UpdateUi.autoCheck(ctx);
+  }
+
+  /// Atalhos de segurar o ícone do app (res/xml/shortcuts.xml).
+  void _openShortcut(String name) {
+    final nav = navigatorKey.currentState;
+    final ctx = navigatorKey.currentContext;
+    if (nav == null || ctx == null) return;
+    final Widget? page = switch (name) {
+      'reminder' => const ReminderEditor(),
+      'note' => NoteEditorPage(noteId: ctx.read<NotesStore>().create(NoteKind.nota).id),
+      'search' => const SearchPage(),
+      'qr' => const QrPage(initialTab: QrPage.readTab),
+      _ => null,
+    };
+    if (page != null) nav.push(MaterialPageRoute(builder: (_) => page));
   }
 
   /// Ao abrir o app: condições, lugares e replanejamento.
