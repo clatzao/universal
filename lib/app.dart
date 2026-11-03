@@ -14,6 +14,7 @@ import 'habits/habits_store.dart';
 import 'info/info_store.dart';
 import 'more/more_page.dart';
 import 'news/news_page.dart';
+import 'news/news_reader.dart';
 import 'news/news_store.dart';
 import 'notify/actions.dart';
 import 'notify/notifications.dart';
@@ -106,7 +107,16 @@ class _UniversalAppState extends State<UniversalApp> with WidgetsBindingObserver
     if (p.alarm) {
       nav?.push(MaterialPageRoute(builder: (_) => AlarmScreen(payload: p, notificationId: r.id)));
     } else if (p.kind == 'n' && p.id != null) {
-      launchUrl(Uri.parse(p.id!), mode: LaunchMode.externalApplication);
+      // Alerta de palavra-chave: abre o resumo; sem a notícia em memória, abre o site.
+      final ctx = navigatorKey.currentContext;
+      final news = ctx?.read<NewsStore>();
+      final item = news?.items.where((i) => i.link == p.id).firstOrNull;
+      if (item != null) {
+        news!.markRead(item);
+        nav?.push(MaterialPageRoute(builder: (_) => NewsReaderPage(item: item)));
+      } else {
+        launchUrl(Uri.parse(p.id!), mode: LaunchMode.externalApplication);
+      }
     } else if (p.kind == 'r' || p.kind == 'h') {
       tabIndex.value = 1;
     } else if (p.kind == 'f') {

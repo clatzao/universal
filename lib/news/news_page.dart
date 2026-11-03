@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../core/format.dart';
 import '../core/theme.dart';
 import '../info/info_store.dart';
 import '../info/info_strip.dart';
 import '../settings/settings.dart';
+import 'news_reader.dart';
 import 'news_store.dart';
 import 'rss.dart';
 import 'sources.dart';
@@ -119,7 +119,7 @@ class NewsCard extends StatelessWidget {
       child: InkWell(
         onTap: () {
           store.markRead(item);
-          launchUrl(Uri.parse(item.link), mode: LaunchMode.externalApplication);
+          Navigator.push(context, MaterialPageRoute(builder: (_) => NewsReaderPage(item: item)));
         },
         child: Padding(
           padding: const EdgeInsets.all(12),
