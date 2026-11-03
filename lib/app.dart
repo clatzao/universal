@@ -19,6 +19,7 @@ import 'more/more_page.dart';
 import 'news/news_page.dart';
 import 'news/news_reader.dart';
 import 'news/news_store.dart';
+import 'notes/notes_page.dart';
 import 'notify/actions.dart';
 import 'notify/notifications.dart';
 import 'reminders/alarm_screen.dart';
@@ -35,10 +36,11 @@ abstract final class Tabs {
   static const hoje = 0;
   static const lembretes = 1;
   static const habitos = 2;
-  static const noticias = 3;
-  static const financas = 4;
-  static const curiosidades = 5;
-  static const mais = 6;
+  static const notas = 3;
+  static const noticias = 4;
+  static const financas = 5;
+  static const curiosidades = 6;
+  static const mais = 7;
 }
 
 /// Aba selecionada (permite trocar de aba a partir de outras telas).
@@ -215,6 +217,7 @@ const _tabs = [
   _TabInfo('Hoje', Icons.wb_sunny_outlined, Icons.wb_sunny, TodayPage()),
   _TabInfo('Lembretes', Icons.notifications_outlined, Icons.notifications, RemindersPage()),
   _TabInfo('Hábitos', Icons.check_circle_outline, Icons.check_circle, HabitsTab()),
+  _TabInfo('Notas', Icons.sticky_note_2_outlined, Icons.sticky_note_2, NotesPage()),
   _TabInfo('Notícias', Icons.newspaper_outlined, Icons.newspaper, NewsPage()),
   _TabInfo('Finanças', Icons.account_balance_wallet_outlined, Icons.account_balance_wallet, FinancePage()),
   _TabInfo('Curiosidades', Icons.lightbulb_outline, Icons.lightbulb, CuriositiesPage()),

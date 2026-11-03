@@ -29,7 +29,6 @@ const _soon = [
     'Carreira de futebol (estilo New Star Soccer / Soccer Champs)',
     'Desafio diário, recordes e modo contra alguém',
   ]),
-  _Soon('Notas e listas', Icons.checklist, ['Notas rápidas', 'Listas de compras e tarefas']),
   _Soon('Ferramentas', Icons.build, ['Conversor', 'Pomodoro', 'Dividir conta', 'QR code']),
 ];
 

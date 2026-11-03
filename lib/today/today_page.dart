@@ -16,6 +16,8 @@ import '../info/quote_detail.dart';
 import '../info/weather_detail.dart';
 import '../news/news_page.dart';
 import '../news/news_store.dart';
+import '../notes/notes_page.dart';
+import '../notes/notes_store.dart';
 import '../reminders/reminders_page.dart';
 import '../reminders/reminders_store.dart';
 import '../settings/settings.dart';
@@ -41,6 +43,7 @@ class TodayPage extends StatelessWidget {
     final reminders = context.watch<RemindersStore>();
     final habits = context.watch<HabitsStore>().items;
     final finance = context.watch<FinanceStore>();
+    final pinnedNotes = context.watch<NotesStore>().pinned;
     final info = context.watch<InfoStore>();
     final news = context.watch<NewsStore>().visible.take(4).toList();
     final holiday = settings.calendar.holidayName(now);
@@ -126,6 +129,13 @@ class TodayPage extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Column(children: [for (final h in habits) HabitCard(habit: h, compact: true)]),
+                ),
+              ],
+              if (pinnedNotes.isNotEmpty) ...[
+                _Section(title: 'Notas fixadas', onMore: () => tabIndex.value = Tabs.notas),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(children: [for (final n in pinnedNotes.take(3)) NoteCard(note: n)]),
                 ),
               ],
               if (finance.txs.isNotEmpty || finance.accounts.length > 1) ...[

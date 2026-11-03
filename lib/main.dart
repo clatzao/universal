@@ -13,6 +13,7 @@ import 'finance/finance_store.dart';
 import 'habits/habits_store.dart';
 import 'info/info_store.dart';
 import 'news/news_store.dart';
+import 'notes/notes_store.dart';
 import 'notify/actions.dart';
 import 'notify/notifications.dart';
 import 'notify/planner.dart';
@@ -33,7 +34,8 @@ Future<void> main() async {
   final info = InfoStore(settings);
   final curiosities = CuriositiesStore();
   final finance = FinanceStore();
-  await Future.wait([reminders.load(), habits.load(), news.load(), info.load(), finance.load()]);
+  final notes = NotesStore();
+  await Future.wait([reminders.load(), habits.load(), news.load(), info.load(), finance.load(), notes.load()]);
 
   settings.onReplan = () async => Replanner.request();
   NotificationActions.onChanged = () async {
@@ -56,6 +58,7 @@ Future<void> main() async {
       ChangeNotifierProvider.value(value: info),
       ChangeNotifierProvider.value(value: curiosities),
       ChangeNotifierProvider.value(value: finance),
+      ChangeNotifierProvider.value(value: notes),
     ],
     child: UniversalApp(launchResponse: launch),
   ));

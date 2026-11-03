@@ -17,21 +17,22 @@ import 'package:universal/info/quote_detail.dart';
 import 'package:universal/info/weather_detail.dart';
 import 'package:universal/news/news_store.dart';
 import 'package:universal/news/rss.dart';
+import 'package:universal/notes/notes_store.dart';
 import 'package:universal/news/sports.dart';
 import 'package:universal/news/sports_page.dart';
 import 'package:universal/reminders/reminders_store.dart';
 import 'package:universal/settings/settings.dart';
 
 NewsItem _news(String title, {Topic topic = Topic.esportes, String source = 'ge', String summary = ''}) => NewsItem(
-      id: title,
-      sourceId: source,
-      sourceName: source,
-      topic: topic,
-      title: title,
-      summary: summary,
-      link: 'https://example.com/$title',
-      date: DateTime(2026, 11, 3),
-    );
+  id: title,
+  sourceId: source,
+  sourceName: source,
+  topic: topic,
+  title: title,
+  summary: summary,
+  link: 'https://example.com/$title',
+  date: DateTime(2026, 11, 3),
+);
 
 void main() {
   group('times e ligas', () {
@@ -146,7 +147,12 @@ void main() {
 
     testWidgets('abre a curiosidade e desliza para a próxima', (tester) async {
       final list = facts.take(3).toList();
-      await tester.pumpWidget(MaterialApp(theme: AppTheme.dark(), home: FactDetailPage(list: list, index: 0)));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.dark(),
+          home: FactDetailPage(list: list, index: 0),
+        ),
+      );
       await tester.pump();
       expect(find.text('1 de 3'), findsOneWidget);
       expect(find.text(list[0].text), findsOneWidget);
@@ -172,18 +178,21 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       final finance = FinanceStore();
       await tester.runAsync(finance.load);
-      await tester.pumpWidget(MultiProvider(
-        providers: [
-          ChangeNotifierProvider.value(value: settings),
-          ChangeNotifierProvider(create: (_) => RemindersStore(settings)),
-          ChangeNotifierProvider(create: (_) => HabitsStore(settings)),
-          ChangeNotifierProvider(create: (_) => NewsStore(settings)),
-          ChangeNotifierProvider(create: (_) => InfoStore(settings)),
-          ChangeNotifierProvider(create: (_) => CuriositiesStore()),
-          ChangeNotifierProvider.value(value: finance),
-        ],
-        child: MaterialApp(theme: AppTheme.dark(), home: const HomeShell()),
-      ));
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: settings),
+            ChangeNotifierProvider(create: (_) => RemindersStore(settings)),
+            ChangeNotifierProvider(create: (_) => HabitsStore(settings)),
+            ChangeNotifierProvider(create: (_) => NewsStore(settings)),
+            ChangeNotifierProvider(create: (_) => InfoStore(settings)),
+            ChangeNotifierProvider(create: (_) => CuriositiesStore()),
+            ChangeNotifierProvider(create: (_) => NotesStore()),
+            ChangeNotifierProvider.value(value: finance),
+          ],
+          child: MaterialApp(theme: AppTheme.dark(), home: const HomeShell()),
+        ),
+      );
       await tester.pump(const Duration(milliseconds: 100));
     }
 
@@ -231,13 +240,15 @@ void main() {
     final settings = SettingsStore();
     await tester.binding.setSurfaceSize(const Size(390, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: settings),
-        ChangeNotifierProvider(create: (_) => NewsStore(settings)),
-      ],
-      child: MaterialApp(theme: AppTheme.dark(), home: const SportsFollowPage()),
-    ));
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: settings),
+          ChangeNotifierProvider(create: (_) => NewsStore(settings)),
+        ],
+        child: MaterialApp(theme: AppTheme.dark(), home: const SportsFollowPage()),
+      ),
+    );
     await tester.tap(find.widgetWithText(FilterChip, 'Flamengo'));
     await tester.pump();
     expect(settings.value.followedSports, {'flamengo'});
