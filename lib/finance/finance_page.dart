@@ -7,6 +7,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../app.dart';
 import '../core/format.dart';
 import '../core/theme.dart';
 import 'finance.dart';
@@ -1054,7 +1055,7 @@ class FinanceTodayCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: InkWell(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FinancePage())),
+        onTap: () => tabIndex.value = Tabs.financas,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(

@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/format.dart';
 import 'curiosities_store.dart';
+import 'fact_detail.dart';
 import 'facts.dart';
 
 class CuriositiesPage extends StatefulWidget {
@@ -51,7 +52,10 @@ class _CuriositiesPageState extends State<CuriositiesPage> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: ChoiceChip(
-                      label: const Text('Todas'), selected: category == null, onSelected: (_) => setState(() => category = null)),
+                    label: const Text('Todas'),
+                    selected: category == null,
+                    onSelected: (_) => setState(() => category = null),
+                  ),
                 ),
                 for (final c in FactCategory.values)
                   Padding(
@@ -73,6 +77,7 @@ class _CuriositiesPageState extends State<CuriositiesPage> {
                 leading: Icon(f.category.icon, color: Theme.of(context).colorScheme.primary),
                 title: Text(f.text),
                 subtitle: Text(f.category.label),
+                onTap: () => FactDetailPage.open(context, f, list: list),
               ),
             ),
         ],
@@ -89,31 +94,43 @@ class FactOfDayCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.all(12),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: scheme.tertiary.withValues(alpha: 0.18)),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [scheme.tertiaryContainer, scheme.surfaceContainer],
+    return GestureDetector(
+      onTap: () => FactDetailPage.open(context, fact),
+      child: Container(
+        margin: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: scheme.tertiary.withValues(alpha: 0.18)),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [scheme.tertiaryContainer, scheme.surfaceContainer],
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.auto_awesome, size: 18, color: scheme.tertiary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'CURIOSIDADE DO DIA · ${fact.category.label.toUpperCase()}',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.tertiary, letterSpacing: 1),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              fact.text,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: scheme.onTertiaryContainer, height: 1.45),
+            ),
+          ],
         ),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Icon(Icons.auto_awesome, size: 18, color: scheme.tertiary),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text('CURIOSIDADE DO DIA · ${fact.category.label.toUpperCase()}',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.tertiary, letterSpacing: 1)),
-          ),
-        ]),
-        const SizedBox(height: 10),
-        Text(fact.text,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: scheme.onTertiaryContainer, height: 1.45)),
-      ]),
     );
   }
 }
@@ -137,7 +154,10 @@ class _OnThisDay extends StatelessWidget {
           if (store.error != null)
             ListTile(
               title: Text(store.error!),
-              trailing: TextButton(onPressed: () => store.loadOnThisDay(force: true), child: const Text('Tentar de novo')),
+              trailing: TextButton(
+                onPressed: () => store.loadOnThisDay(force: true),
+                child: const Text('Tentar de novo'),
+              ),
             ),
           for (final e in store.events.take(25))
             ListTile(

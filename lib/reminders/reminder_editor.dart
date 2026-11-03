@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../core/format.dart';
+import '../core/system.dart';
 import '../info/info_store.dart';
 import '../info/weather.dart';
 import '../settings/settings.dart';
@@ -322,6 +323,25 @@ class _ReminderEditorState extends State<ReminderEditor> {
       ),
     );
   }
+
+  void _askFullScreen() => showDialog<void>(
+        context: context,
+        builder: (c) => AlertDialog(
+          title: const Text('Permitir tela cheia'),
+          content: const Text(
+              'O Android está bloqueando o alarme em tela cheia para o Universal. Sem essa permissão, o alarme só aparece como notificação.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(c), child: const Text('Agora não')),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(c);
+                SystemInfo.openFullScreenSettings();
+              },
+              child: const Text('Abrir ajustes'),
+            ),
+          ],
+        ),
+      );
 
   Widget _section(String title, List<Widget> children) => Padding(
         padding: const EdgeInsets.only(top: 16),
@@ -737,9 +757,12 @@ class _ReminderEditorState extends State<ReminderEditor> {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Alarme em tela cheia'),
-              subtitle: const Text('Toca o som de alarme até você responder'),
+              subtitle: const Text('Toca o som de alarme até você responder. Abre sozinho com o aparelho bloqueado.'),
               value: alarm,
-              onChanged: (v) => setState(() => alarm = v),
+              onChanged: (v) async {
+                setState(() => alarm = v);
+                if (v && !await SystemInfo.canUseFullScreenIntent() && mounted) _askFullScreen();
+              },
             ),
             Row(children: [
               _numberField('Insistir a cada (min)', insistEvery, (v) => setState(() => insistEvery = v), min: 0),

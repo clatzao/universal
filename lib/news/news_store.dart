@@ -7,6 +7,7 @@ import '../notify/notifications.dart';
 import '../settings/settings.dart';
 import 'rss.dart';
 import 'sources.dart';
+import 'sports.dart';
 
 class NewsService {
   static Future<List<NewsItem>> fetchSource(NewsSource s) async {
@@ -16,8 +17,8 @@ class NewsService {
   }
 
   /// Busca todas as fontes ativas em paralelo. Fontes com erro são ignoradas.
-  static Future<(List<NewsItem>, List<String>)> fetchAll(Set<String> disabled) async {
-    final active = newsSources.where((s) => !disabled.contains(s.id)).toList();
+  static Future<(List<NewsItem>, List<String>)> fetchAll(Set<String> disabled, {Set<String> followed = const {}}) async {
+    final active = [...newsSources.where((s) => !disabled.contains(s.id)), ...teamSources(followed)];
     final failed = <String>[];
     final results = await Future.wait(active.map((s) async {
       try {
@@ -99,17 +100,19 @@ class NewsStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<NewsItem> get visible => items.where((i) => !settings.value.disabledSources.contains(i.sourceId)).toList();
+  List<NewsItem> get visible => items
+      .where((i) => !settings.value.disabledSources.contains(i.sourceId) && matchesFollow(i, settings.value.followedSports))
+      .toList();
 
   Future<void> refresh() async {
     if (loading) return;
     loading = true;
     notifyListeners();
     try {
-      final (list, f) = await NewsService.fetchAll(settings.value.disabledSources);
+      final (list, f) = await NewsService.fetchAll(settings.value.disabledSources, followed: settings.value.followedSports);
       failed = f;
       if (list.isNotEmpty) {
-        items = list.length > 400 ? list.sublist(0, 400) : list;
+        items = list.length > 800 ? list.sublist(0, 800) : list;
         updatedAt = DateTime.now();
         await JsonStore.write('news_cache', {
           'items': items.map((e) => e.toJson()).toList(),

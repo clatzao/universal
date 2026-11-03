@@ -10,6 +10,8 @@ import 'news_reader.dart';
 import 'news_store.dart';
 import 'rss.dart';
 import 'sources.dart';
+import 'sports.dart';
+import 'sports_page.dart';
 
 class NewsPage extends StatefulWidget {
   const NewsPage({super.key});
@@ -64,6 +66,25 @@ class _NewsPageState extends State<NewsPage> {
             ],
           ),
         ),
+        if (topic == Topic.esportes && !savedOnly)
+          Builder(builder: (context) {
+            final followed = context.watch<SettingsStore>().value.followedSports;
+            return Card(
+              margin: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+              child: ListTile(
+                dense: true,
+                leading: const Icon(Icons.sports_soccer),
+                title: const Text('Meus times e ligas'),
+                subtitle: Text(
+                  followed.isEmpty ? 'Toque para escolher o que acompanhar' : followed.map(followLabel).join(', '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SportsFollowPage())),
+              ),
+            );
+          }),
         if (store.loading) const LinearProgressIndicator(),
         Expanded(
           child: RefreshIndicator(

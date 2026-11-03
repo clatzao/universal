@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../core/format.dart';
 import '../core/theme.dart';
-import '../habits/habits_page.dart';
 import '../settings/settings.dart';
 import 'parser.dart';
 import 'recurrence.dart';
@@ -16,15 +15,9 @@ class RemindersPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Lembretes'),
-          bottom: const TabBar(tabs: [Tab(text: 'Lembretes'), Tab(text: 'Hábitos')]),
-        ),
-        body: const TabBarView(children: [_RemindersTab(), HabitsTab()]),
-      ),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Lembretes')),
+      body: const _RemindersTab(),
     );
   }
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../finance/finance_page.dart';
 import '../settings/settings_page.dart';
 import '../update/update_ui.dart';
 import '../update/updater.dart';
@@ -42,16 +41,6 @@ class MorePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Mais')),
       body: ListView(padding: const EdgeInsets.fromLTRB(12, 0, 12, 24), children: [
-        Card(
-          child: ListTile(
-            leading: const Icon(Icons.account_balance_wallet_outlined),
-            title: const Text('Finanças'),
-            subtitle: const Text('Gastos, cartão, orçamentos, contas fixas e metas'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FinancePage())),
-          ),
-        ),
-        const SizedBox(height: 8),
         Card(
           child: Column(children: [
             ListTile(

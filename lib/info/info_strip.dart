@@ -6,6 +6,8 @@ import '../core/theme.dart';
 import '../settings/settings.dart';
 import '../settings/settings_page.dart';
 import 'info_store.dart';
+import 'quote_detail.dart';
+import 'weather_detail.dart';
 
 final _brl = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 final _brl0 = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$', decimalDigits: 0);
@@ -22,18 +24,22 @@ class InfoStrip extends StatelessWidget {
     final q = info.quotes;
     final style = Theme.of(context).textTheme.bodySmall;
 
-    Widget quote(String label, double? v, double? change, {bool noCents = false}) {
+    Widget quote(Currency currency, String label, double? v, double? change, {bool noCents = false}) {
       if (v == null) return const SizedBox();
       final up = (change ?? 0) >= 0;
-      return Padding(
-        padding: const EdgeInsets.only(right: 14),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Text('$label ', style: style?.copyWith(fontWeight: FontWeight.bold)),
-          Text((noCents ? _brl0 : _brl).format(v), style: style),
-          if (change != null)
-            Text(' ${up ? '▲' : '▼'}${change.abs().toStringAsFixed(2)}%',
-                style: style?.copyWith(color: up ? AppTheme.positive : AppTheme.negative)),
-        ]),
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => QuoteDetailPage(currency: currency))),
+        child: Padding(
+          padding: const EdgeInsets.only(right: 14),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Text('$label ', style: style?.copyWith(fontWeight: FontWeight.bold)),
+            Text((noCents ? _brl0 : _brl).format(v), style: style),
+            if (change != null)
+              Text(' ${up ? '▲' : '▼'}${change.abs().toStringAsFixed(2)}%',
+                  style: style?.copyWith(color: up ? AppTheme.positive : AppTheme.negative)),
+          ]),
+        ),
       );
     }
 
@@ -44,7 +50,10 @@ class InfoStrip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(children: [
           InkWell(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage())),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => w == null ? const SettingsPage() : const WeatherDetailPage()),
+            ),
             child: Padding(
               padding: const EdgeInsets.only(right: 14),
               child: w == null
@@ -57,9 +66,9 @@ class InfoStrip extends StatelessWidget {
             ),
           ),
           if (q != null) ...[
-            quote('USD', q.usd, q.usdChange),
-            quote('EUR', q.eur, q.eurChange),
-            quote('BTC', q.btc, q.btcChange, noCents: true),
+            quote(Currency.usd, 'USD', q.usd, q.usdChange),
+            quote(Currency.eur, 'EUR', q.eur, q.eurChange),
+            quote(Currency.btc, 'BTC', q.btc, q.btcChange, noCents: true),
           ] else if (info.loading)
             Text('Carregando cotações…', style: style),
         ]),

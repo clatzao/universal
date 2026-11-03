@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -9,7 +10,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'background/background.dart';
 import 'core/theme.dart';
 import 'curiosities/curiosities_page.dart';
+import 'finance/finance_page.dart';
 import 'finance/finance_store.dart';
+import 'habits/habits_page.dart';
 import 'habits/habits_store.dart';
 import 'info/info_store.dart';
 import 'more/more_page.dart';
@@ -27,8 +30,19 @@ import 'update/update_ui.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
+/// Posições das abas da barra inferior.
+abstract final class Tabs {
+  static const hoje = 0;
+  static const lembretes = 1;
+  static const habitos = 2;
+  static const noticias = 3;
+  static const financas = 4;
+  static const curiosidades = 5;
+  static const mais = 6;
+}
+
 /// Aba selecionada (permite trocar de aba a partir de outras telas).
-final tabIndex = ValueNotifier<int>(0);
+final tabIndex = ValueNotifier<int>(Tabs.hoje);
 
 class UniversalApp extends StatefulWidget {
   final NotificationResponse? launchResponse;
@@ -40,6 +54,9 @@ class UniversalApp extends StatefulWidget {
 }
 
 class _UniversalAppState extends State<UniversalApp> with WidgetsBindingObserver {
+  final _openedAlarms = <String>{};
+  Timer? _alarmTimer;
+
   @override
   void initState() {
     super.initState();
@@ -48,7 +65,14 @@ class _UniversalAppState extends State<UniversalApp> with WidgetsBindingObserver
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.launchResponse != null) _onResponse(widget.launchResponse!);
       _startup();
+      _watchAlarms();
     });
+  }
+
+  void _watchAlarms() {
+    _checkActiveAlarms();
+    _alarmTimer?.cancel();
+    _alarmTimer = Timer.periodic(const Duration(seconds: 5), (_) => _checkActiveAlarms());
   }
 
   @override
@@ -85,7 +109,12 @@ class _UniversalAppState extends State<UniversalApp> with WidgetsBindingObserver
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) {
+      _alarmTimer?.cancel();
+      _alarmTimer = null;
+    }
     if (state == AppLifecycleState.resumed) {
+      _watchAlarms();
       final ctx = navigatorKey.currentContext;
       if (ctx == null) return;
       ctx.read<RemindersStore>().load();
@@ -105,7 +134,7 @@ class _UniversalAppState extends State<UniversalApp> with WidgetsBindingObserver
     if (p == null) return;
     final nav = navigatorKey.currentState;
     if (p.alarm) {
-      nav?.push(MaterialPageRoute(builder: (_) => AlarmScreen(payload: p, notificationId: r.id)));
+      _openAlarm(p, r.id);
     } else if (p.kind == 'n' && p.id != null) {
       // Alerta de palavra-chave: abre o resumo; sem a notícia em memória, abre o site.
       final ctx = navigatorKey.currentContext;
@@ -117,11 +146,39 @@ class _UniversalAppState extends State<UniversalApp> with WidgetsBindingObserver
       } else {
         launchUrl(Uri.parse(p.id!), mode: LaunchMode.externalApplication);
       }
-    } else if (p.kind == 'r' || p.kind == 'h') {
-      tabIndex.value = 1;
+    } else if (p.kind == 'r') {
+      tabIndex.value = Tabs.lembretes;
+    } else if (p.kind == 'h') {
+      tabIndex.value = Tabs.habitos;
     } else if (p.kind == 'f') {
-      tabIndex.value = 3;
+      tabIndex.value = Tabs.curiosidades;
     }
+  }
+
+  void _openAlarm(Payload p, int? id) {
+    if (!_openedAlarms.add('$id|${p.occurrence?.millisecondsSinceEpoch}')) return;
+    navigatorKey.currentState?.push(
+      MaterialPageRoute(
+        builder: (_) => AlarmScreen(payload: p, notificationId: id),
+      ),
+    );
+  }
+
+  /// O Android só abre a tela cheia sozinho com o aparelho bloqueado. Com o app aberto,
+  /// ela é aberta aqui, assim que há um alarme tocando.
+  Future<void> _checkActiveAlarms() async {
+    try {
+      final active = await Notifications.plugin.getActiveNotifications();
+      final keys = <String>{};
+      for (final n in active.where((n) => n.channelId == alarmChannel)) {
+        final p = Payload.decode(n.payload);
+        if (p == null || !p.alarm) continue;
+        keys.add('${n.id}|${p.occurrence?.millisecondsSinceEpoch}');
+        _openAlarm(p, n.id);
+      }
+      // Um alarme encerrado pode tocar de novo na próxima insistência ou adiamento.
+      _openedAlarms.retainWhere(keys.contains);
+    } catch (_) {}
   }
 
   @override
@@ -144,29 +201,240 @@ class _UniversalAppState extends State<UniversalApp> with WidgetsBindingObserver
   }
 }
 
-class HomeShell extends StatelessWidget {
+class _TabInfo {
+  final String label;
+  final IconData icon;
+  final IconData selectedIcon;
+  final Widget page;
+
+  const _TabInfo(this.label, this.icon, this.selectedIcon, this.page);
+}
+
+/// Mesma ordem das constantes em [Tabs].
+const _tabs = [
+  _TabInfo('Hoje', Icons.wb_sunny_outlined, Icons.wb_sunny, TodayPage()),
+  _TabInfo('Lembretes', Icons.notifications_outlined, Icons.notifications, RemindersPage()),
+  _TabInfo('Hábitos', Icons.check_circle_outline, Icons.check_circle, HabitsTab()),
+  _TabInfo('Notícias', Icons.newspaper_outlined, Icons.newspaper, NewsPage()),
+  _TabInfo('Finanças', Icons.account_balance_wallet_outlined, Icons.account_balance_wallet, FinancePage()),
+  _TabInfo('Curiosidades', Icons.lightbulb_outline, Icons.lightbulb, CuriositiesPage()),
+  _TabInfo('Mais', Icons.apps_outlined, Icons.apps, MorePage()),
+];
+
+/// Abas: deslize para trocar; tocar na aba atual volta ao topo. O gesto de voltar
+/// retorna ao Hoje e, de lá, só fecha o app se for repetido.
+class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
-  static const _pages = [TodayPage(), RemindersPage(), NewsPage(), CuriositiesPage(), MorePage()];
+  @override
+  State<HomeShell> createState() => _HomeShellState();
+}
+
+class _HomeShellState extends State<HomeShell> {
+  late final PageController _pages = PageController(initialPage: tabIndex.value);
+  final _scrolls = [for (final _ in _tabs) ScrollController()];
+  DateTime? _lastBack;
+
+  @override
+  void initState() {
+    super.initState();
+    tabIndex.addListener(_syncPage);
+  }
+
+  @override
+  void dispose() {
+    tabIndex.removeListener(_syncPage);
+    _pages.dispose();
+    for (final s in _scrolls) {
+      s.dispose();
+    }
+    super.dispose();
+  }
+
+  void _syncPage() {
+    if (!_pages.hasClients) return;
+    final current = _pages.page?.round() ?? tabIndex.value;
+    if (current == tabIndex.value) return;
+    if ((current - tabIndex.value).abs() == 1) {
+      _pages.animateToPage(tabIndex.value, duration: const Duration(milliseconds: 240), curve: Curves.easeOutCubic);
+    } else {
+      _pages.jumpToPage(tabIndex.value);
+    }
+  }
+
+  void _onTabTap(int i) {
+    HapticFeedback.selectionClick();
+    if (i != tabIndex.value) {
+      tabIndex.value = i;
+      return;
+    }
+    final s = _scrolls[i];
+    // Com abas internas há mais de uma lista ligada: nesse caso não há "o" topo.
+    if (s.positions.length == 1) {
+      s.animateTo(0, duration: const Duration(milliseconds: 320), curve: Curves.easeOutCubic);
+    }
+  }
+
+  void _onBack() {
+    if (tabIndex.value != Tabs.hoje) {
+      tabIndex.value = Tabs.hoje;
+      return;
+    }
+    final now = DateTime.now();
+    if (_lastBack != null && now.difference(_lastBack!) < const Duration(seconds: 2)) {
+      SystemNavigator.pop();
+      return;
+    }
+    _lastBack = now;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('Volte de novo para sair'), duration: Duration(seconds: 2)));
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<int>(
-      valueListenable: tabIndex,
-      builder: (context, i, _) => Scaffold(
-        body: IndexedStack(index: i, children: _pages),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: i,
-          onDestinationSelected: (v) => tabIndex.value = v,
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.wb_sunny_outlined), selectedIcon: Icon(Icons.wb_sunny), label: 'Hoje'),
-            NavigationDestination(
-                icon: Icon(Icons.notifications_outlined), selectedIcon: Icon(Icons.notifications), label: 'Lembretes'),
-            NavigationDestination(icon: Icon(Icons.newspaper_outlined), selectedIcon: Icon(Icons.newspaper), label: 'Notícias'),
-            NavigationDestination(
-                icon: Icon(Icons.lightbulb_outline), selectedIcon: Icon(Icons.lightbulb), label: 'Curiosidades'),
-            NavigationDestination(icon: Icon(Icons.apps_outlined), selectedIcon: Icon(Icons.apps), label: 'Mais'),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _onBack();
+      },
+      child: Scaffold(
+        body: PageView(
+          controller: _pages,
+          onPageChanged: (i) => tabIndex.value = i,
+          children: [
+            for (var i = 0; i < _tabs.length; i++)
+              _KeepAlive(
+                child: PrimaryScrollController(controller: _scrolls[i], child: _tabs[i].page),
+              ),
           ],
+        ),
+        bottomNavigationBar: ValueListenableBuilder<int>(
+          valueListenable: tabIndex,
+          builder: (_, i, _) => _BottomBar(selected: i, onTap: _onTabTap),
+        ),
+      ),
+    );
+  }
+}
+
+class _KeepAlive extends StatefulWidget {
+  final Widget child;
+
+  const _KeepAlive({required this.child});
+
+  @override
+  State<_KeepAlive> createState() => _KeepAliveState();
+}
+
+class _KeepAliveState extends State<_KeepAlive> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
+}
+
+/// Barra inferior rolável: cabem mais funções do que na barra padrão de 5 itens.
+class _BottomBar extends StatefulWidget {
+  final int selected;
+  final ValueChanged<int> onTap;
+
+  const _BottomBar({required this.selected, required this.onTap});
+
+  @override
+  State<_BottomBar> createState() => _BottomBarState();
+}
+
+class _BottomBarState extends State<_BottomBar> {
+  static const _itemWidth = 78.0;
+  final _controller = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _center(animate: false));
+  }
+
+  @override
+  void didUpdateWidget(_BottomBar old) {
+    super.didUpdateWidget(old);
+    if (old.selected != widget.selected) _center();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _center({bool animate = true}) {
+    if (!_controller.hasClients) return;
+    final p = _controller.position;
+    final target = (widget.selected * _itemWidth + _itemWidth / 2 - p.viewportDimension / 2).clamp(
+      p.minScrollExtent,
+      p.maxScrollExtent,
+    );
+    if (animate) {
+      _controller.animateTo(target, duration: const Duration(milliseconds: 240), curve: Curves.easeOutCubic);
+    } else {
+      _controller.jumpTo(target);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    return Material(
+      color: AppTheme.surface,
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 66,
+          child: ListView.builder(
+            controller: _controller,
+            scrollDirection: Axis.horizontal,
+            itemCount: _tabs.length,
+            itemExtent: _itemWidth,
+            itemBuilder: (_, i) {
+              final tab = _tabs[i];
+              final on = i == widget.selected;
+              final color = on ? AppTheme.text : AppTheme.textMuted;
+              return InkWell(
+                onTap: () => widget.onTap(i),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: 52,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: on ? AppTheme.surfaceHighest : Colors.transparent,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Icon(on ? tab.selectedIcon : tab.icon, size: 22, color: color),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      tab.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.fade,
+                      softWrap: false,
+                      style: t.labelSmall?.copyWith(
+                        color: color,
+                        fontWeight: on ? FontWeight.w600 : FontWeight.w400,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

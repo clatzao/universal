@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 
+import '../core/system.dart';
 import '../info/info_store.dart';
 import '../news/news_page.dart';
 import '../news/news_store.dart';
@@ -23,6 +24,8 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   bool? notifOk;
   bool? exactOk;
+  bool? fullScreenOk;
+  bool? batteryOk;
   LocationPermission? locPerm;
 
   @override
@@ -34,6 +37,8 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _refreshPerms() async {
     final n = await Notifications.enabled();
     final e = await Notifications.canScheduleExact();
+    final f = await SystemInfo.canUseFullScreenIntent();
+    final b = await SystemInfo.isIgnoringBatteryOptimizations();
     LocationPermission? l;
     try {
       l = await Geolocator.checkPermission();
@@ -42,6 +47,8 @@ class _SettingsPageState extends State<SettingsPage> {
       setState(() {
         notifOk = n;
         exactOk = e;
+        fullScreenOk = f;
+        batteryOk = b;
         locPerm = l;
       });
     }
@@ -256,8 +263,24 @@ class _SettingsPageState extends State<SettingsPage> {
         ListTile(
           leading: const Icon(Icons.fullscreen),
           title: const Text('Alarme em tela cheia'),
-          subtitle: const Text('Toque para revisar a permissão (Android 14+)'),
-          onTap: Notifications.requestFullScreen,
+          subtitle: Text(fullScreenOk == false
+              ? 'Bloqueado pelo Android: toque e ative para o Universal'
+              : 'Permitido ✓ Abre sozinho com o aparelho bloqueado'),
+          onTap: () async {
+            await SystemInfo.openFullScreenSettings();
+            _refreshPerms();
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.battery_saver),
+          title: const Text('Economia de bateria'),
+          subtitle: Text(batteryOk == false
+              ? 'Pode atrasar alarmes: toque e escolha "Não otimizar" para o Universal'
+              : 'Sem restrição ✓'),
+          onTap: () async {
+            await SystemInfo.openBatterySettings();
+            _refreshPerms();
+          },
         ),
         ListTile(
           leading: const Icon(Icons.location_on),

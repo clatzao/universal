@@ -12,6 +12,8 @@ import '../finance/finance_store.dart';
 import '../habits/habits_page.dart';
 import '../habits/habits_store.dart';
 import '../info/info_store.dart';
+import '../info/quote_detail.dart';
+import '../info/weather_detail.dart';
 import '../news/news_page.dart';
 import '../news/news_store.dart';
 import '../reminders/reminders_page.dart';
@@ -81,7 +83,16 @@ class TodayPage extends StatelessWidget {
                     child: _Pill(icon: Icons.celebration_outlined, text: holiday),
                   ),
                 ),
-              _WeatherCard(info: info, hasCity: settings.hasLocation || settings.useGps, city: settings.cityName),
+              GestureDetector(
+                onTap: info.weather == null
+                    ? null
+                    : () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WeatherDetailPage())),
+                child: _WeatherCard(
+                  info: info,
+                  hasCity: settings.hasLocation || settings.useGps,
+                  city: settings.cityName,
+                ),
+              ),
               _QuotesRow(info: info),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -95,7 +106,7 @@ class TodayPage extends StatelessWidget {
                   ],
                 ),
               ),
-              _Section(title: 'Lembretes', onMore: () => tabIndex.value = 1),
+              _Section(title: 'Lembretes', onMore: () => tabIndex.value = Tabs.lembretes),
               if (reminderTiles.isEmpty)
                 const _Empty(icon: Icons.notifications_none, text: 'Nada nas próximas 36 horas.')
               else
@@ -111,25 +122,22 @@ class TodayPage extends StatelessWidget {
                   ),
                 ),
               if (habits.isNotEmpty) ...[
-                const _Section(title: 'Hábitos'),
+                _Section(title: 'Hábitos', onMore: () => tabIndex.value = Tabs.habitos),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Column(children: [for (final h in habits) HabitCard(habit: h, compact: true)]),
                 ),
               ],
               if (finance.txs.isNotEmpty || finance.accounts.length > 1) ...[
-                _Section(
-                  title: 'Finanças',
-                  onMore: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FinancePage())),
-                ),
+                _Section(title: 'Finanças', onMore: () => tabIndex.value = Tabs.financas),
                 const FinanceTodayCard(),
               ],
-              _Section(title: 'Curiosidade do dia', onMore: () => tabIndex.value = 3),
+              _Section(title: 'Curiosidade do dia', onMore: () => tabIndex.value = Tabs.curiosidades),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: FactOfDayCard(fact: factOfDay(now)),
               ),
-              _Section(title: 'Manchetes', onMore: () => tabIndex.value = 2),
+              _Section(title: 'Manchetes', onMore: () => tabIndex.value = Tabs.noticias),
               if (news.isEmpty) const _Empty(icon: Icons.newspaper, text: 'Carregando notícias…'),
               for (final n in news)
                 Padding(
@@ -268,37 +276,40 @@ class _QuotesRow extends StatelessWidget {
     if (q == null) return const SizedBox();
     final t = Theme.of(context).textTheme;
 
-    Widget tile(String label, double? v, double? change, {bool noCents = false}) {
+    Widget tile(Currency currency, String label, double? v, double? change, {bool noCents = false}) {
       final up = (change ?? 0) >= 0;
       return Expanded(
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-          decoration: BoxDecoration(
-            color: AppTheme.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppTheme.line),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(label, style: t.labelSmall?.copyWith(color: AppTheme.textMuted, letterSpacing: 0.8)),
-                  const Spacer(),
-                  if (change != null)
-                    Text(
-                      '${up ? '▲' : '▼'}${change.abs().toStringAsFixed(1)}%',
-                      style: t.labelSmall?.copyWith(color: up ? AppTheme.positive : AppTheme.negative),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(v == null ? '—' : (noCents ? _brl0 : _brl).format(v), style: t.titleSmall),
-              ),
-            ],
+        child: GestureDetector(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => QuoteDetailPage(currency: currency))),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            decoration: BoxDecoration(
+              color: AppTheme.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppTheme.line),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(label, style: t.labelSmall?.copyWith(color: AppTheme.textMuted, letterSpacing: 0.8)),
+                    const Spacer(),
+                    if (change != null)
+                      Text(
+                        '${up ? '▲' : '▼'}${change.abs().toStringAsFixed(1)}%',
+                        style: t.labelSmall?.copyWith(color: up ? AppTheme.positive : AppTheme.negative),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(v == null ? '—' : (noCents ? _brl0 : _brl).format(v), style: t.titleSmall),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -308,11 +319,11 @@ class _QuotesRow extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
       child: Row(
         children: [
-          tile('DÓLAR', q.usd, q.usdChange),
+          tile(Currency.usd, 'DÓLAR', q.usd, q.usdChange),
           const SizedBox(width: 10),
-          tile('EURO', q.eur, q.eurChange),
+          tile(Currency.eur, 'EURO', q.eur, q.eurChange),
           const SizedBox(width: 10),
-          tile('BITCOIN', q.btc, q.btcChange, noCents: true),
+          tile(Currency.btc, 'BITCOIN', q.btc, q.btcChange, noCents: true),
         ],
       ),
     );

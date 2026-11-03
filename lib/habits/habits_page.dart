@@ -34,6 +34,7 @@ class HabitsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = context.watch<HabitsStore>();
     return Scaffold(
+      appBar: AppBar(title: const Text('Hábitos')),
       body: store.items.isEmpty
           ? const Center(
               child: Padding(

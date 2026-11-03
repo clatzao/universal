@@ -21,6 +21,7 @@ class Settings {
   List<String> keywords;
   bool keywordAlerts;
   Set<String> disabledSources;
+  Set<String> followedSports;
 
   bool autoUpdate;
   DateTime? lastUpdateCheck;
@@ -40,6 +41,7 @@ class Settings {
     this.keywords = const [],
     this.keywordAlerts = true,
     this.disabledSources = const {},
+    this.followedSports = const {},
     this.autoUpdate = true,
     this.lastUpdateCheck,
     this.nextNid = 10,
@@ -63,6 +65,7 @@ class Settings {
         'keywords': keywords,
         'keywordAlerts': keywordAlerts,
         'disabledSources': disabledSources.toList(),
+        'followedSports': followedSports.toList(),
         'autoUpdate': autoUpdate,
         'lastUpdateCheck': lastUpdateCheck?.toIso8601String(),
         'nextNid': nextNid,
@@ -83,6 +86,7 @@ class Settings {
         keywords: ((j['keywords'] as List?) ?? const []).cast<String>().toList(),
         keywordAlerts: (j['keywordAlerts'] as bool?) ?? true,
         disabledSources: ((j['disabledSources'] as List?) ?? const []).cast<String>().toSet(),
+        followedSports: ((j['followedSports'] as List?) ?? const []).cast<String>().toSet(),
         autoUpdate: (j['autoUpdate'] as bool?) ?? true,
         lastUpdateCheck: j['lastUpdateCheck'] == null ? null : DateTime.parse(j['lastUpdateCheck'] as String),
         nextNid: (j['nextNid'] as int?) ?? 10,

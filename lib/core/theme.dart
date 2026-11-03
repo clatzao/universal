@@ -57,6 +57,10 @@ class AppTheme {
     final r16 = BorderRadius.circular(16);
     return base.copyWith(
       scaffoldBackgroundColor: bg,
+      // A tela anterior aparece enquanto se faz o gesto de voltar.
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {TargetPlatform.android: PredictiveBackPageTransitionsBuilder()},
+      ),
       textTheme: t.copyWith(
         headlineMedium: t.headlineMedium?.copyWith(fontWeight: FontWeight.w600, letterSpacing: -0.5),
         titleLarge: t.titleLarge?.copyWith(fontWeight: FontWeight.w600),
