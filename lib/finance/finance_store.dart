@@ -27,6 +27,12 @@ class FinanceStore extends ChangeNotifier {
 
   Future<void> load({DateTime? now}) async {
     final j = await JsonStore.read('finance');
+    accounts = [];
+    txs = [];
+    fixed = [];
+    goals = [];
+    budgets = {};
+    defaultAccountId = null;
     if (j is Map) {
       try {
         accounts = [for (final e in (j['accounts'] as List? ?? [])) Account.fromJson((e as Map).cast())];

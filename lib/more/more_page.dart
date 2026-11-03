@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../backup/backup_page.dart';
 import '../settings/settings_page.dart';
 import '../tools/tools_page.dart';
 import '../update/update_ui.dart';
@@ -24,6 +25,16 @@ class MorePage extends StatelessWidget {
               subtitle: const Text('Conversor, dividir conta, sorteio, QR code, cofre de senhas e mais'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolsPage())),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.backup_outlined),
+              title: const Text('Backup'),
+              subtitle: const Text('Guardar e restaurar seus dados em um arquivo protegido'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupPage())),
             ),
           ),
           const SizedBox(height: 8),

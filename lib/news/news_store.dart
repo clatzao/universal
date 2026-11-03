@@ -94,8 +94,10 @@ class NewsStore extends ChangeNotifier {
       updatedAt = c['updatedAt'] == null ? null : DateTime.tryParse(c['updatedAt'] as String);
     }
     final s = await JsonStore.read('news_saved');
+    saved = [];
     if (s is List) saved = s.map((e) => NewsItem.fromJson((e as Map).cast<String, dynamic>())).toList();
     final r = await JsonStore.read('news_read');
+    read = {};
     if (r is List) read = r.cast<String>().toSet();
     notifyListeners();
   }

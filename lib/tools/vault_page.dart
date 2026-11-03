@@ -222,7 +222,7 @@ class _VaultPageState extends State<VaultPage> with WidgetsBindingObserver {
         const SizedBox(height: 12),
         Text(
           'As senhas ficam criptografadas só neste aparelho, sem cópia na nuvem. '
-          'Se você desinstalar o app ou trocar de celular, elas serão perdidas.',
+          'Para não perdê-las ao trocar de celular, faça um backup em Mais → Backup.',
           textAlign: TextAlign.center,
           style: t.bodySmall?.copyWith(color: AppTheme.textMuted),
         ),

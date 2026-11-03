@@ -14,6 +14,14 @@ import io.flutter.plugin.common.MethodChannel
 
 // FlutterFragmentActivity é exigida pelo pedido de digital do cofre de senhas.
 class MainActivity : FlutterFragmentActivity() {
+    private var pendingResult: MethodChannel.Result? = null
+    private var pendingBytes: ByteArray? = null
+
+    private companion object {
+        const val REQUEST_SAVE = 4101
+        const val REQUEST_OPEN = 4102
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "universal/system").setMethodCallHandler { call, result ->
@@ -39,8 +47,52 @@ class MainActivity : FlutterFragmentActivity() {
                     }
                     result.success(null)
                 }
+                "saveFile" -> {
+                    pendingResult = result
+                    pendingBytes = call.argument<ByteArray>("bytes")
+                    val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                        type = "application/octet-stream"
+                        putExtra(Intent.EXTRA_TITLE, call.argument<String>("name"))
+                    }
+                    startActivityForResult(intent, REQUEST_SAVE)
+                }
+                "openFile" -> {
+                    pendingResult = result
+                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                        type = "*/*"
+                    }
+                    startActivityForResult(intent, REQUEST_OPEN)
+                }
                 else -> result.notImplemented()
             }
+        }
+    }
+
+    @Deprecated("A API nova exige registrar o pedido antes de a tela iniciar")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != REQUEST_SAVE && requestCode != REQUEST_OPEN) return
+        val result = pendingResult ?: return
+        val bytes = pendingBytes
+        pendingResult = null
+        pendingBytes = null
+        val uri = data?.data
+        val saving = requestCode == REQUEST_SAVE
+        if (resultCode != RESULT_OK || uri == null) {
+            result.success(if (saving) false else null)
+            return
+        }
+        try {
+            if (saving) {
+                contentResolver.openOutputStream(uri, "wt")!!.use { it.write(bytes!!) }
+                result.success(true)
+            } else {
+                result.success(contentResolver.openInputStream(uri)!!.use { it.readBytes() })
+            }
+        } catch (e: Exception) {
+            result.error("file", e.message, null)
         }
     }
 

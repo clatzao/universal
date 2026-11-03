@@ -31,6 +31,17 @@ class JsonStore {
     }
   }
 
+  static Future<bool> exists(String name) async {
+    await _queue[name];
+    return (await _file(name)).exists();
+  }
+
+  static Future<void> delete(String name) async {
+    await _queue[name];
+    final f = await _file(name);
+    if (await f.exists()) await f.delete();
+  }
+
   static Future<void> write(String name, Object? data) {
     final prev = _queue[name] ?? Future.value();
     final next = prev.then((_) async {

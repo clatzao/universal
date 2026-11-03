@@ -11,6 +11,7 @@ class NotesStore extends ChangeNotifier {
 
   Future<void> load() async {
     final j = await JsonStore.read('notes');
+    items = [];
     if (j is List) {
       try {
         items = [for (final e in j) Note.fromJson((e as Map).cast<String, dynamic>())];

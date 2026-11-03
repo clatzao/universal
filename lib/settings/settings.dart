@@ -25,6 +25,7 @@ class Settings {
 
   bool autoUpdate;
   DateTime? lastUpdateCheck;
+  DateTime? lastBackup;
 
   int nextNid;
 
@@ -44,6 +45,7 @@ class Settings {
     this.followedSports = const {},
     this.autoUpdate = true,
     this.lastUpdateCheck,
+    this.lastBackup,
     this.nextNid = 10,
   });
 
@@ -68,6 +70,7 @@ class Settings {
         'followedSports': followedSports.toList(),
         'autoUpdate': autoUpdate,
         'lastUpdateCheck': lastUpdateCheck?.toIso8601String(),
+        'lastBackup': lastBackup?.toIso8601String(),
         'nextNid': nextNid,
       };
 
@@ -89,6 +92,7 @@ class Settings {
         followedSports: ((j['followedSports'] as List?) ?? const []).cast<String>().toSet(),
         autoUpdate: (j['autoUpdate'] as bool?) ?? true,
         lastUpdateCheck: j['lastUpdateCheck'] == null ? null : DateTime.parse(j['lastUpdateCheck'] as String),
+        lastBackup: DateTime.tryParse(j['lastBackup'] as String? ?? ''),
         nextNid: (j['nextNid'] as int?) ?? 10,
       );
 

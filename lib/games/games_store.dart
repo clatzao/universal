@@ -33,6 +33,9 @@ class GamesStore extends ChangeNotifier {
 
   Future<void> load() async {
     final j = await JsonStore.read('games');
+    records.clear();
+    daily.clear();
+    career = null;
     if (j is Map) {
       try {
         records.clear();

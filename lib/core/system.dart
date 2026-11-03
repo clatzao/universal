@@ -23,6 +23,13 @@ class SystemInfo {
     }
   }
 
+  /// Abre o seletor de arquivos do Android para salvar. Retorna false se a pessoa cancelar.
+  static Future<bool> saveFile(String name, List<int> bytes) async =>
+      await _channel.invokeMethod<bool>('saveFile', {'name': name, 'bytes': Uint8List.fromList(bytes)}) ?? false;
+
+  /// Abre o seletor de arquivos do Android. Retorna null se a pessoa cancelar.
+  static Future<Uint8List?> openFile() => _channel.invokeMethod<Uint8List>('openFile');
+
   static Future<bool> _ask(String method) async {
     try {
       return await _channel.invokeMethod<bool>(method) ?? true;
