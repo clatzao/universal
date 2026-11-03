@@ -11,6 +11,7 @@ import 'package:universal/curiosities/curiosities_store.dart';
 import 'package:universal/curiosities/fact_detail.dart';
 import 'package:universal/curiosities/facts.dart';
 import 'package:universal/finance/finance_store.dart';
+import 'package:universal/games/games_store.dart';
 import 'package:universal/habits/habits_store.dart';
 import 'package:universal/info/info_store.dart';
 import 'package:universal/info/quote_detail.dart';
@@ -188,6 +189,7 @@ void main() {
             ChangeNotifierProvider(create: (_) => InfoStore(settings)),
             ChangeNotifierProvider(create: (_) => CuriositiesStore()),
             ChangeNotifierProvider(create: (_) => NotesStore()),
+          ChangeNotifierProvider(create: (_) => GamesStore()),
             ChangeNotifierProvider.value(value: finance),
           ],
           child: MaterialApp(theme: AppTheme.dark(), home: const HomeShell()),

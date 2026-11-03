@@ -12,6 +12,7 @@ import 'core/theme.dart';
 import 'curiosities/curiosities_page.dart';
 import 'finance/finance_page.dart';
 import 'finance/finance_store.dart';
+import 'games/games_page.dart';
 import 'habits/habits_page.dart';
 import 'habits/habits_store.dart';
 import 'info/info_store.dart';
@@ -40,7 +41,8 @@ abstract final class Tabs {
   static const noticias = 4;
   static const financas = 5;
   static const curiosidades = 6;
-  static const mais = 7;
+  static const jogos = 7;
+  static const mais = 8;
 }
 
 /// Aba selecionada (permite trocar de aba a partir de outras telas).
@@ -221,6 +223,7 @@ const _tabs = [
   _TabInfo('Notícias', Icons.newspaper_outlined, Icons.newspaper, NewsPage()),
   _TabInfo('Finanças', Icons.account_balance_wallet_outlined, Icons.account_balance_wallet, FinancePage()),
   _TabInfo('Curiosidades', Icons.lightbulb_outline, Icons.lightbulb, CuriositiesPage()),
+  _TabInfo('Jogos', Icons.sports_esports_outlined, Icons.sports_esports, GamesPage()),
   _TabInfo('Mais', Icons.apps_outlined, Icons.apps, MorePage()),
 ];
 

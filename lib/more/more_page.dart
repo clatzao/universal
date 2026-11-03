@@ -7,31 +7,6 @@ import '../tools/tools_page.dart';
 import '../update/update_ui.dart';
 import '../update/updater.dart';
 
-class _Soon {
-  final String title;
-  final IconData icon;
-  final List<String> items;
-
-  const _Soon(this.title, this.icon, this.items);
-}
-
-const _soon = [
-  _Soon('Joguinhos', Icons.sports_esports, [
-    'Palavra do dia (estilo Termo)',
-    'Forca',
-    'Caça-palavras',
-    'Snake',
-    'Tetris',
-    'Flappy',
-    'Quiz com as curiosidades',
-    'Jogo da memória',
-    'Caso do dia (investigação curta)',
-    'Escape room de texto',
-    'Carreira de futebol (estilo New Star Soccer / Soccer Champs)',
-    'Desafio diário, recordes e modo contra alguém',
-  ]),
-];
-
 class MorePage extends StatelessWidget {
   const MorePage({super.key});
 
@@ -89,19 +64,6 @@ class MorePage extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 8),
-          for (final s in _soon)
-            Card(
-              child: ExpansionTile(
-                leading: Icon(s.icon),
-                title: Text(s.title),
-                subtitle: const Text('Em breve'),
-                children: [
-                  for (final i in s.items)
-                    ListTile(dense: true, leading: const Icon(Icons.schedule, size: 18), title: Text(i)),
-                ],
-              ),
-            ),
         ],
       ),
     );
