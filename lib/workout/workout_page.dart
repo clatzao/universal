@@ -42,6 +42,8 @@ class WorkoutPage extends StatelessWidget {
     final muted = t.bodySmall?.copyWith(color: AppTheme.textMuted);
     final week = store.week(now), last = store.week(now, weeksAgo: 1);
     final weight = store.latestMeasure('peso');
+    final added = {for (final e in store.exercises) e.name.toLowerCase()};
+    final suggestions = exercisePresets.where((p) => !added.contains(p.$1.toLowerCase())).toList();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Treinos'),
@@ -99,16 +101,23 @@ class WorkoutPage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
             child: Text('Meus exercícios', style: t.titleMedium),
           ),
-          if (store.exercises.isEmpty) ...[
+          if (store.exercises.isEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              child: Text('Adicione os exercícios que você faz. Algumas sugestões:', style: muted),
+              child: Text('Adicione os exercícios que você faz.', style: muted),
+            ),
+          for (final e in store.exercises) _ExerciseCard(exercise: e),
+          // As sugestões continuam aparecendo até todas serem adicionadas.
+          if (suggestions.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
+              child: Text('Toque para adicionar:', style: muted),
             ),
             Wrap(
               spacing: 8,
               runSpacing: 4,
               children: [
-                for (final (name, kind) in exercisePresets)
+                for (final (name, kind) in suggestions)
                   ActionChip(
                     avatar: Icon(kind.icon, size: 18),
                     label: Text(name),
@@ -117,7 +126,6 @@ class WorkoutPage extends StatelessWidget {
               ],
             ),
           ],
-          for (final e in store.exercises) _ExerciseCard(exercise: e),
         ],
       ),
     );

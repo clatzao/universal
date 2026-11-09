@@ -260,6 +260,12 @@ void main() {
       await tester.tap(find.text('Flexão'));
       await tester.pump();
       expect(store.exercises.single.name, 'Flexão');
+      // As outras sugestões continuam disponíveis, e a já adicionada sai da lista.
+      await tester.tap(find.text('Abdominal'));
+      await tester.pump();
+      expect(store.exercises.map((e) => e.name), ['Flexão', 'Abdominal']);
+      expect(find.widgetWithText(ActionChip, 'Flexão'), findsNothing);
+      expect(find.widgetWithText(ActionChip, 'Prancha'), findsOneWidget);
 
       await tester.tap(find.byTooltip('Registrar Flexão'));
       await tester.pumpAndSettle();
