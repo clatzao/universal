@@ -13,6 +13,7 @@ import '../reminders/reminders_store.dart';
 import '../settings/settings.dart';
 import '../tools/vault.dart';
 import '../tools/vault_page.dart';
+import '../workout/workout_store.dart';
 import 'backup.dart';
 
 class BackupPage extends StatefulWidget {
@@ -125,11 +126,20 @@ class _BackupPageState extends State<BackupPage> {
     final finance = context.read<FinanceStore>();
     final games = context.read<GamesStore>();
     final news = context.read<NewsStore>();
+    final workouts = context.read<WorkoutStore>();
     setState(() => working = 'Restaurando…');
     try {
       await service.restore(content);
       await settings.load();
-      await Future.wait([reminders.load(), habits.load(), notes.load(), finance.load(), games.load(), news.load()]);
+      await Future.wait([
+        reminders.load(),
+        habits.load(),
+        notes.load(),
+        finance.load(),
+        games.load(),
+        news.load(),
+        workouts.load(),
+      ]);
       Replanner.request();
       if (mounted) _say('Backup restaurado');
     } on BackupRestoreError {
@@ -195,7 +205,7 @@ class _BackupPageState extends State<BackupPage> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Guarde seus lembretes, hábitos, notas, finanças, jogos e configurações em um arquivo criptografado. '
+            'Guarde seus lembretes, hábitos, treinos, notas, finanças, jogos e configurações em um arquivo criptografado. '
             'Salve-o fora do celular, como no Drive, para usar ao trocar de aparelho.',
             style: t.bodyMedium,
           ),

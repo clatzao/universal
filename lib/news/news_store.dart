@@ -17,8 +17,14 @@ class NewsService {
   }
 
   /// Busca todas as fontes ativas em paralelo. Fontes com erro são ignoradas.
-  static Future<(List<NewsItem>, List<String>)> fetchAll(Set<String> disabled, {Set<String> followed = const {}}) async {
-    final active = [...newsSources.where((s) => !disabled.contains(s.id)), ...teamSources(followed)];
+  static Future<(List<NewsItem>, List<String>)> fetchAll(Set<String> disabled,
+      {Set<String> followed = const {}, String? city}) async {
+    final regional = regionalSource(city);
+    final active = [
+      ...newsSources.where((s) => !disabled.contains(s.id)),
+      if (regional != null && !disabled.contains(regional.id)) regional,
+      ...teamSources(followed),
+    ];
     final failed = <String>[];
     final results = await Future.wait(active.map((s) async {
       try {
@@ -50,7 +56,7 @@ class NewsService {
     final initialized = (state['initialized'] as bool?) ?? false;
     final seen = ((state['seen'] as List?) ?? const []).cast<String>().toList();
     final seenSet = seen.toSet();
-    final (items, _) = await fetchAll(s.disabledSources);
+    final (items, _) = await fetchAll(s.disabledSources, city: s.cityName);
     final keys = s.keywords.map((k) => normalizeKeepLength(k.trim())).where((k) => k.isNotEmpty).toList();
     var sent = 0;
     for (final i in items) {
@@ -111,7 +117,8 @@ class NewsStore extends ChangeNotifier {
     loading = true;
     notifyListeners();
     try {
-      final (list, f) = await NewsService.fetchAll(settings.value.disabledSources, followed: settings.value.followedSports);
+      final (list, f) = await NewsService.fetchAll(settings.value.disabledSources,
+          followed: settings.value.followedSports, city: settings.value.cityName);
       failed = f;
       if (list.isNotEmpty) {
         items = list.length > 800 ? list.sublist(0, 800) : list;

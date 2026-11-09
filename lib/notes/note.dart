@@ -7,13 +7,33 @@ class NoteItem {
   String text;
   bool done;
 
-  NoteItem({required this.id, this.text = '', this.done = false});
+  /// Lista de compras: preço da unidade em centavos e quantidade.
+  int? price;
+  int qty;
 
-  Map<String, dynamic> toJson() => {'id': id, 'text': text, 'done': done};
+  NoteItem({required this.id, this.text = '', this.done = false, this.price, this.qty = 1});
 
-  factory NoteItem.fromJson(Map<String, dynamic> j) =>
-      NoteItem(id: j['id'] as String, text: j['text'] as String? ?? '', done: j['done'] as bool? ?? false);
+  int get total => (price ?? 0) * qty;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'text': text,
+    'done': done,
+    if (price != null) 'price': price,
+    if (qty != 1) 'qty': qty,
+  };
+
+  factory NoteItem.fromJson(Map<String, dynamic> j) => NoteItem(
+    id: j['id'] as String,
+    text: j['text'] as String? ?? '',
+    done: j['done'] as bool? ?? false,
+    price: (j['price'] as num?)?.toInt(),
+    qty: (j['qty'] as num?)?.toInt() ?? 1,
+  );
 }
+
+/// Soma dos itens com preço.
+int shoppingTotal(Iterable<NoteItem> items) => items.fold(0, (s, i) => s + i.total);
 
 class Note {
   final String id;
@@ -22,6 +42,9 @@ class Note {
   String body;
   List<NoteItem> items;
   bool pinned;
+
+  /// Lista com preços, que pode virar um gasto em Finanças.
+  bool shopping;
   final DateTime createdAt;
   DateTime updatedAt;
 
@@ -32,6 +55,7 @@ class Note {
     this.body = '',
     List<NoteItem>? items,
     this.pinned = false,
+    this.shopping = false,
     required this.createdAt,
     required this.updatedAt,
   }) : items = items ?? [];
@@ -90,6 +114,7 @@ class Note {
     'body': body,
     'items': [for (final i in items) i.toJson()],
     'pinned': pinned,
+    if (shopping) 'shopping': true,
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),
   };
@@ -103,6 +128,7 @@ class Note {
       body: j['body'] as String? ?? '',
       items: [for (final e in (j['items'] as List? ?? const [])) NoteItem.fromJson((e as Map).cast<String, dynamic>())],
       pinned: j['pinned'] as bool? ?? false,
+      shopping: j['shopping'] as bool? ?? false,
       createdAt: created,
       updatedAt: DateTime.tryParse(j['updatedAt'] as String? ?? '') ?? created,
     );

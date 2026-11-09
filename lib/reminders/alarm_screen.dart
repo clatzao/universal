@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/format.dart';
+import '../core/pixel_art.dart';
 import '../notify/notifications.dart';
 import 'reminders_store.dart';
 
@@ -39,7 +40,7 @@ class AlarmScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
-              Icon(Icons.alarm, size: 96, color: scheme.onPrimaryContainer),
+              const Center(child: _RingingClock()),
               const SizedBox(height: 16),
               Text(hm(when),
                   textAlign: TextAlign.center,
@@ -78,7 +79,8 @@ class AlarmScreen extends StatelessWidget {
                         child: FilledButton.tonal(
                           style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
                           onPressed: () => snooze(d),
-                          child: Text('Adiar $label'),
+                          // A fonte pixel é mais larga: o texto encolhe em vez de quebrar a linha.
+                          child: FittedBox(fit: BoxFit.scaleDown, child: Text('Adiar $label', maxLines: 1)),
                         ),
                       ),
                     ),
@@ -100,4 +102,45 @@ class AlarmScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Despertador em pixel que balança enquanto o alarme toca, em passos inteiros, como um sprite.
+class _RingingClock extends StatefulWidget {
+  const _RingingClock();
+
+  @override
+  State<_RingingClock> createState() => _RingingClockState();
+}
+
+class _RingingClockState extends State<_RingingClock> with SingleTickerProviderStateMixin {
+  late final AnimationController shake = AnimationController(vsync: this, duration: const Duration(milliseconds: 480));
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Quem pediu menos movimento no Android vê o despertador parado.
+    if (MediaQuery.disableAnimationsOf(context)) {
+      shake.stop();
+    } else if (!shake.isAnimating) {
+      shake.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    shake.dispose();
+    super.dispose();
+  }
+
+  static const _steps = [-6.0, 0.0, 6.0, 0.0];
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: shake,
+    builder: (_, child) => Transform.translate(
+      offset: Offset(_steps[(shake.value * _steps.length).floor() % _steps.length], 0),
+      child: child,
+    ),
+    child: const PixelArt(pixelAlarmClock, size: 128),
+  );
 }

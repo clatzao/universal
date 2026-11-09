@@ -20,6 +20,7 @@ import 'notify/notifications.dart';
 import 'notify/planner.dart';
 import 'reminders/reminders_store.dart';
 import 'settings/settings.dart';
+import 'workout/workout_store.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,7 +38,8 @@ Future<void> main() async {
   final finance = FinanceStore();
   final notes = NotesStore();
   final games = GamesStore();
-  await Future.wait([reminders.load(), habits.load(), news.load(), info.load(), finance.load(), notes.load(), games.load()]);
+  final workouts = WorkoutStore();
+  await Future.wait([reminders.load(), habits.load(), news.load(), info.load(), finance.load(), notes.load(), games.load(), workouts.load()]);
 
   settings.onReplan = () async => Replanner.request();
   NotificationActions.onChanged = () async {
@@ -62,6 +64,7 @@ Future<void> main() async {
       ChangeNotifierProvider.value(value: finance),
       ChangeNotifierProvider.value(value: notes),
       ChangeNotifierProvider.value(value: games),
+      ChangeNotifierProvider.value(value: workouts),
     ],
     child: UniversalApp(launchResponse: launch),
   ));

@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'background/background.dart';
+import 'core/pixel_art.dart';
 import 'core/system.dart';
 import 'core/theme.dart';
 import 'curiosities/curiosities_page.dart';
@@ -34,6 +35,7 @@ import 'search/search_page.dart';
 import 'settings/settings.dart';
 import 'today/today_page.dart';
 import 'tools/qr_page.dart';
+import 'workout/workout_page.dart';
 import 'update/update_ui.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
@@ -43,12 +45,13 @@ abstract final class Tabs {
   static const hoje = 0;
   static const lembretes = 1;
   static const habitos = 2;
-  static const notas = 3;
-  static const noticias = 4;
-  static const financas = 5;
-  static const curiosidades = 6;
-  static const jogos = 7;
-  static const mais = 8;
+  static const treinos = 3;
+  static const notas = 4;
+  static const noticias = 5;
+  static const financas = 6;
+  static const curiosidades = 7;
+  static const jogos = 8;
+  static const mais = 9;
 }
 
 /// Aba selecionada (permite trocar de aba a partir de outras telas).
@@ -231,24 +234,24 @@ class _UniversalAppState extends State<UniversalApp> with WidgetsBindingObserver
 
 class _TabInfo {
   final String label;
-  final IconData icon;
-  final IconData selectedIcon;
+  final PixelSprite icon;
   final Widget page;
 
-  const _TabInfo(this.label, this.icon, this.selectedIcon, this.page);
+  const _TabInfo(this.label, this.icon, this.page);
 }
 
 /// Mesma ordem das constantes em [Tabs].
 const _tabs = [
-  _TabInfo('Hoje', Icons.wb_sunny_outlined, Icons.wb_sunny, TodayPage()),
-  _TabInfo('Lembretes', Icons.notifications_outlined, Icons.notifications, RemindersPage()),
-  _TabInfo('Hábitos', Icons.check_circle_outline, Icons.check_circle, HabitsTab()),
-  _TabInfo('Notas', Icons.sticky_note_2_outlined, Icons.sticky_note_2, NotesPage()),
-  _TabInfo('Notícias', Icons.newspaper_outlined, Icons.newspaper, NewsPage()),
-  _TabInfo('Finanças', Icons.account_balance_wallet_outlined, Icons.account_balance_wallet, FinancePage()),
-  _TabInfo('Curiosidades', Icons.lightbulb_outline, Icons.lightbulb, CuriositiesPage()),
-  _TabInfo('Jogos', Icons.sports_esports_outlined, Icons.sports_esports, GamesPage()),
-  _TabInfo('Mais', Icons.apps_outlined, Icons.apps, MorePage()),
+  _TabInfo('Hoje', PixelIcons.hoje, TodayPage()),
+  _TabInfo('Lembretes', PixelIcons.lembretes, RemindersPage()),
+  _TabInfo('Hábitos', PixelIcons.habitos, HabitsTab()),
+  _TabInfo('Treinos', PixelIcons.treinos, WorkoutPage()),
+  _TabInfo('Notas', PixelIcons.notas, NotesPage()),
+  _TabInfo('Notícias', PixelIcons.noticias, NewsPage()),
+  _TabInfo('Finanças', PixelIcons.financas, FinancePage()),
+  _TabInfo('Curiosidades', PixelIcons.curiosidades, CuriositiesPage()),
+  _TabInfo('Jogos', PixelIcons.jogos, GamesPage()),
+  _TabInfo('Mais', PixelIcons.mais, MorePage()),
 ];
 
 /// Abas: deslize para trocar; tocar na aba atual volta ao topo. O gesto de voltar
@@ -446,7 +449,7 @@ class _BottomBarState extends State<_BottomBar> {
                         color: on ? AppTheme.surfaceHighest : Colors.transparent,
                         borderRadius: BorderRadius.circular(15),
                       ),
-                      child: Icon(on ? tab.selectedIcon : tab.icon, size: 22, color: color),
+                      child: Center(child: PixelArt(tab.icon, size: 20, color: color)),
                     ),
                     const SizedBox(height: 3),
                     Text(

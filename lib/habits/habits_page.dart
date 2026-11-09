@@ -134,7 +134,13 @@ class HabitDetail extends StatefulWidget {
   State<HabitDetail> createState() => _HabitDetailState();
 }
 
+enum _Period { dias, semanas, meses }
+
+const _months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
 class _HabitDetailState extends State<HabitDetail> {
+  _Period period = _Period.dias;
+
   @override
   void initState() {
     super.initState();
@@ -178,8 +184,33 @@ class _HabitDetailState extends State<HabitDetail> {
     if (h == null) return Scaffold(appBar: AppBar());
     final today = dayOf(DateTime.now());
     final days = [for (var i = 13; i >= 0; i--) DateTime(today.year, today.month, today.day - i)];
-    final maxY = [h.goal, ...days.map(h.amountOn)].reduce((a, b) => a > b ? a : b) * 1.15;
     final scheme = Theme.of(context).colorScheme;
+    final weeks = h.weeksMet(today, 12);
+    final months = h.monthsRate(today, 12);
+    final (values, labels, goalLine, met, caption) = switch (period) {
+      _Period.dias => (
+          [for (final d in days) h.amountOn(d)],
+          [for (final d in days) '${d.day}'],
+          h.goal,
+          [for (final d in days) h.metOn(d)],
+          'Quantidade por dia. A linha tracejada é a meta.',
+        ),
+      _Period.semanas => (
+          [for (final w in weeks) w.$2.toDouble()],
+          [for (final w in weeks) '${w.$1.day}/${w.$1.month}'],
+          7.0,
+          [for (final w in weeks) w.$2 == 7],
+          'Dias com meta batida em cada semana, de segunda a domingo.',
+        ),
+      _Period.meses => (
+          [for (final m in months) (m.$2 * 100).roundToDouble()],
+          [for (final m in months) _months[m.$1.month - 1]],
+          100.0,
+          [for (final m in months) m.$2 >= 0.8],
+          'Porcentagem dos dias de cada mês com meta batida.',
+        ),
+    };
+    final maxY = [goalLine, ...values].reduce((a, b) => a > b ? a : b) * 1.15;
 
     Widget stat(String label, String value) => Expanded(
           child: Column(children: [
@@ -201,8 +232,26 @@ class _HabitDetailState extends State<HabitDetail> {
               stat('Sequência 🔥', '${h.streak(today)}'),
               stat('Recorde', '${h.record()}'),
               stat('Últimos 30 dias', '${(h.rate30(today) * 100).round()}%'),
+              stat('Média diária', h.fmt(h.average(today, 30))),
             ]),
           ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
+          child: SegmentedButton<_Period>(
+            segments: const [
+              ButtonSegment(value: _Period.dias, label: Text('14 dias')),
+              ButtonSegment(value: _Period.semanas, label: Text('Semanas')),
+              ButtonSegment(value: _Period.meses, label: Text('Meses')),
+            ],
+            selected: {period},
+            showSelectedIcon: false,
+            onSelectionChanged: (s) => setState(() => period = s.first),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+          child: Text(caption, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textMuted)),
         ),
         Card(
           child: Padding(
@@ -216,7 +265,7 @@ class _HabitDetailState extends State<HabitDetail> {
                 borderData: FlBorderData(show: false),
                 barTouchData: BarTouchData(enabled: false),
                 extraLinesData: ExtraLinesData(horizontalLines: [
-                  HorizontalLine(y: h.goal, color: scheme.error, strokeWidth: 1.5, dashArray: [6, 4]),
+                  HorizontalLine(y: goalLine, color: scheme.error, strokeWidth: 1.5, dashArray: [6, 4]),
                 ]),
                 titlesData: FlTitlesData(
                   topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -228,20 +277,22 @@ class _HabitDetailState extends State<HabitDetail> {
                       reservedSize: 22,
                       getTitlesWidget: (v, meta) {
                         final i = v.toInt();
-                        if (i < 0 || i >= days.length || i.isOdd != (days.length - 1).isOdd) return const SizedBox();
-                        return Text('${days[i].day}', style: const TextStyle(fontSize: 10));
+                        if (i < 0 || i >= labels.length || i.isOdd != (labels.length - 1).isOdd) {
+                          return const SizedBox();
+                        }
+                        return Text(labels[i], style: const TextStyle(fontSize: 10));
                       },
                     ),
                   ),
                 ),
                 barGroups: [
-                  for (var i = 0; i < days.length; i++)
+                  for (var i = 0; i < values.length; i++)
                     BarChartGroupData(x: i, barRods: [
                       BarChartRodData(
-                        toY: h.amountOn(days[i]),
+                        toY: values[i],
                         width: 12,
                         borderRadius: BorderRadius.circular(3),
-                        color: h.metOn(days[i]) ? h.type.color : h.type.color.withValues(alpha: 0.45),
+                        color: met[i] ? h.type.color : h.type.color.withValues(alpha: 0.45),
                       ),
                     ]),
                 ],

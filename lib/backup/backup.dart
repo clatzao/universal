@@ -17,6 +17,7 @@ const backupStores = [
   'notes',
   'finance',
   'games',
+  'workouts',
   'news_saved',
   'news_read',
   'news_alerts',

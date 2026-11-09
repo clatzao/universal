@@ -6,6 +6,7 @@ import '../core/theme.dart';
 import '../info/info_store.dart';
 import '../info/info_strip.dart';
 import '../settings/settings.dart';
+import '../settings/settings_page.dart';
 import 'news_reader.dart';
 import 'news_store.dart';
 import 'rss.dart';
@@ -85,6 +86,18 @@ class _NewsPageState extends State<NewsPage> {
               ),
             );
           }),
+        if (topic == Topic.regiao && !savedOnly && regionalSource(context.watch<SettingsStore>().value.cityName) == null)
+          Card(
+            margin: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+            child: ListTile(
+              dense: true,
+              leading: const Icon(Icons.location_city),
+              title: const Text('Escolha sua cidade'),
+              subtitle: const Text('As notícias do seu estado aparecem aqui depois que você escolher uma cidade do Brasil.'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage())),
+            ),
+          ),
         if (store.loading) const LinearProgressIndicator(),
         Expanded(
           child: RefreshIndicator(
@@ -219,7 +232,12 @@ class SourcesPage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
             child: Text(t.label, style: Theme.of(context).textTheme.titleSmall),
           ),
-          for (final s in newsSources.where((s) => s.topic == t))
+          if (t == Topic.regiao && regionalSource(settings.value.cityName) == null)
+            const ListTile(
+              dense: true,
+              title: Text('Escolha uma cidade do Brasil nas Configurações para ver as notícias do seu estado.'),
+            ),
+          for (final s in [...newsSources, ?regionalSource(settings.value.cityName)].where((s) => s.topic == t))
             SwitchListTile(
               title: Text(s.name),
               subtitle: Text(s.url, maxLines: 1, overflow: TextOverflow.ellipsis),

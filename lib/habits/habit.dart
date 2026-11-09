@@ -108,6 +108,50 @@ class Habit {
     return met / 30;
   }
 
+  /// Dias com meta batida em cada uma das últimas [n] semanas (segunda a domingo), da mais antiga à atual.
+  List<(DateTime, int)> weeksMet(DateTime today, int n) {
+    final d = dayOf(today);
+    final monday = DateTime(d.year, d.month, d.day - (d.weekday - 1));
+    return [
+      for (var w = n - 1; w >= 0; w--)
+        () {
+          final start = DateTime(monday.year, monday.month, monday.day - 7 * w);
+          var met = 0;
+          for (var i = 0; i < 7; i++) {
+            final day = DateTime(start.year, start.month, start.day + i);
+            if (!day.isAfter(d) && metOn(day)) met++;
+          }
+          return (start, met);
+        }(),
+    ];
+  }
+
+  /// Fração dos dias de cada um dos últimos [n] meses com meta batida. O mês atual conta só até hoje.
+  List<(DateTime, double)> monthsRate(DateTime today, int n) {
+    final d = dayOf(today);
+    return [
+      for (var m = n - 1; m >= 0; m--)
+        () {
+          final start = DateTime(d.year, d.month - m);
+          final last = m == 0 ? d.day : DateTime(start.year, start.month + 1, 0).day;
+          var met = 0;
+          for (var i = 1; i <= last; i++) {
+            if (metOn(DateTime(start.year, start.month, i))) met++;
+          }
+          return (start, met / last);
+        }(),
+    ];
+  }
+
+  /// Média diária nos últimos [days] dias, incluindo hoje.
+  double average(DateTime today, int days) {
+    var sum = 0.0;
+    for (var i = 0; i < days; i++) {
+      sum += amountOn(DateTime(today.year, today.month, today.day - i));
+    }
+    return sum / days;
+  }
+
   /// Recorrência do lembrete vinculado (nulo se não houver).
   Recurrence? get recurrence => switch (reminderMode) {
         HabitReminderMode.none => null,

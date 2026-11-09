@@ -6,6 +6,9 @@ import 'package:provider/provider.dart';
 
 import '../core/format.dart';
 import '../core/theme.dart';
+import '../finance/finance.dart';
+import '../finance/finance_forms.dart';
+import '../finance/finance_store.dart';
 import '../reminders/reminder_editor.dart';
 import 'note.dart';
 import 'notes_store.dart';
@@ -297,6 +300,117 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     });
   }
 
+  void _toggleShopping() => _update(() => note.shopping = !note.shopping);
+
+  Future<void> _editPrice(NoteItem item) async {
+    final price = TextEditingController(
+      text: item.price == null ? '' : (item.price! / 100).toStringAsFixed(2).replaceAll('.', ','),
+    );
+    final qty = TextEditingController(text: '${item.qty}');
+    final result = await showDialog<(int?, int)>(
+      context: context,
+      builder: (d) => AlertDialog(
+        title: Text(item.text.trim().isEmpty ? 'Preço' : item.text.trim()),
+        content: Row(
+          children: [
+            SizedBox(
+              width: 72,
+              child: TextField(
+                controller: qty,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(labelText: 'Qtd.'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: AmountField(controller: price, label: 'Preço da unidade', autofocus: true),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(d), child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () => Navigator.pop(d, (parseCents(price.text), (int.tryParse(qty.text) ?? 1).clamp(1, 999))),
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+    if (result == null || !mounted) return;
+    _update(() {
+      item.price = result.$1 == null || result.$1! <= 0 ? null : result.$1;
+      item.qty = result.$2;
+    });
+  }
+
+  /// Os itens marcados são os que foram para o carrinho: a soma deles vira um gasto em Mercado.
+  Future<void> _launchPurchase() async {
+    final finance = context.read<FinanceStore>();
+    final amount = TextEditingController(
+      text: (shoppingTotal(note.completed) / 100).toStringAsFixed(2).replaceAll('.', ','),
+    );
+    var accountId = finance.defaultAccount.id;
+    var uncheck = true;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (d) => StatefulBuilder(
+        builder: (d, setDialog) => AlertDialog(
+          title: const Text('Lançar compra em Finanças'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AmountField(controller: amount, label: 'Valor pago'),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: accountId,
+                decoration: const InputDecoration(labelText: 'Conta'),
+                items: [for (final a in finance.accounts) DropdownMenuItem(value: a.id, child: Text(a.name))],
+                onChanged: (v) => setDialog(() => accountId = v!),
+              ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: uncheck,
+                onChanged: (v) => setDialog(() => uncheck = v ?? true),
+                title: const Text('Desmarcar os itens para a próxima compra'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('Cancelar')),
+            FilledButton(onPressed: () => Navigator.pop(d, true), child: const Text('Lançar')),
+          ],
+        ),
+      ),
+    );
+    final cents = parseCents(amount.text);
+    if (ok != true || !mounted) return;
+    if (cents == null || cents <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Informe o valor pago')));
+      return;
+    }
+    final now = DateTime.now();
+    final saving = finance.addTx(
+      kind: TxKind.expense,
+      amount: cents,
+      date: now,
+      category: FinCategory.mercado,
+      accountId: accountId,
+      description: note.displayTitle,
+    );
+    if (uncheck) {
+      _update(() {
+        for (final i in note.items) {
+          i.done = false;
+        }
+      });
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    await saving;
+    messenger.showSnackBar(SnackBar(content: Text('Compra de ${brl(cents)} lançada em Finanças')));
+    if (mounted) showBudgetWarning(context, finance, FinCategory.mercado, now);
+  }
+
   void _convert() {
     _update(() => note.convert(NotesStore.newId));
     body.text = note.body;
@@ -373,6 +487,11 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
             itemBuilder: (_) => [
               PopupMenuItem(value: _copy, child: const Text('Copiar texto')),
               PopupMenuItem(value: _convert, child: Text(isList ? 'Transformar em nota' : 'Transformar em lista')),
+              if (isList)
+                PopupMenuItem(
+                  value: _toggleShopping,
+                  child: Text(note.shopping ? 'Tirar os preços' : 'Usar como lista de compras'),
+                ),
               PopupMenuItem(value: _delete, child: const Text('Excluir')),
             ],
           ),
@@ -431,6 +550,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
             _changed();
           },
           onRemove: () => _removeItem(item),
+          onPrice: note.shopping ? () => _editPrice(item) : null,
         );
       },
       footer: Column(
@@ -456,6 +576,31 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
               ),
             ),
           ),
+          if (note.shopping) ...[
+            const SizedBox(height: 12),
+            Card(
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text('No carrinho: ${brl(shoppingTotal(completed))}', style: t.titleSmall),
+                    Text(
+                      'Lista toda: ${brl(shoppingTotal(note.items))} · marque o que já pegou',
+                      style: t.bodySmall?.copyWith(color: AppTheme.textMuted),
+                    ),
+                    const SizedBox(height: 10),
+                    FilledButton.icon(
+                      onPressed: _launchPurchase,
+                      icon: const Icon(Icons.shopping_cart_checkout),
+                      label: const Text('Lançar compra'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           if (completed.isNotEmpty) ...[
             const SizedBox(height: 14),
             Row(
@@ -510,12 +655,20 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                     item.text,
                     style: const TextStyle(color: AppTheme.textMuted, decoration: TextDecoration.lineThrough),
                   ),
+                  secondary: note.shopping
+                      ? TextButton(onPressed: () => _editPrice(item), child: Text(_priceLabel(item)))
+                      : null,
                 ),
           ],
         ],
       ),
     );
   }
+}
+
+String _priceLabel(NoteItem i) {
+  if (i.price == null) return 'Preço';
+  return i.qty == 1 ? brl(i.price!) : '${i.qty} × ${brl(i.price!)}';
 }
 
 class _ItemRow extends StatefulWidget {
@@ -525,6 +678,9 @@ class _ItemRow extends StatefulWidget {
   final ValueChanged<String> onText;
   final VoidCallback onRemove;
 
+  /// Só nas listas de compras.
+  final VoidCallback? onPrice;
+
   const _ItemRow({
     super.key,
     required this.item,
@@ -532,6 +688,7 @@ class _ItemRow extends StatefulWidget {
     required this.onToggle,
     required this.onText,
     required this.onRemove,
+    this.onPrice,
   });
 
   @override
@@ -575,6 +732,15 @@ class _ItemRowState extends State<_ItemRow> {
               ),
             ),
           ),
+          if (widget.onPrice != null)
+            TextButton(
+              onPressed: widget.onPrice,
+              style: TextButton.styleFrom(
+                foregroundColor: widget.item.price == null ? AppTheme.textMuted : null,
+                visualDensity: VisualDensity.compact,
+              ),
+              child: Text(_priceLabel(widget.item)),
+            ),
           IconButton(
             tooltip: 'Remover',
             icon: const Icon(Icons.close, size: 18, color: AppTheme.textMuted),

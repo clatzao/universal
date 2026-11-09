@@ -48,6 +48,13 @@ class AppTheme {
     scrim: Colors.black,
   );
 
+  /// Fonte pixel dos títulos, números e botões. Textos longos seguem na fonte padrão.
+  static const pixelFont = 'PixelifySans';
+
+  /// A fonte é variável: o peso vem do eixo "wght", sem negrito sintético, que borra os pixels.
+  static TextStyle? pixel(TextStyle? s, {double weight = 500}) =>
+      s?.copyWith(fontFamily: pixelFont, fontWeight: FontWeight.normal, fontVariations: [FontVariation.weight(weight)]);
+
   /// Suaviza as cores de categoria para combinar com o fundo escuro.
   static Color tone(Color c) => Color.lerp(c, const Color(0xFFB8B8C0), 0.35)!;
 
@@ -62,9 +69,18 @@ class AppTheme {
         builders: {TargetPlatform.android: PredictiveBackPageTransitionsBuilder()},
       ),
       textTheme: t.copyWith(
-        headlineMedium: t.headlineMedium?.copyWith(fontWeight: FontWeight.w600, letterSpacing: -0.5),
-        titleLarge: t.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-        titleMedium: t.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        displayLarge: pixel(t.displayLarge),
+        displayMedium: pixel(t.displayMedium),
+        displaySmall: pixel(t.displaySmall),
+        headlineLarge: pixel(t.headlineLarge, weight: 600),
+        headlineMedium: pixel(t.headlineMedium, weight: 600),
+        headlineSmall: pixel(t.headlineSmall, weight: 600),
+        titleLarge: pixel(t.titleLarge, weight: 600),
+        titleMedium: pixel(t.titleMedium, weight: 600),
+        titleSmall: pixel(t.titleSmall),
+        labelLarge: pixel(t.labelLarge),
+        labelMedium: pixel(t.labelMedium),
+        labelSmall: pixel(t.labelSmall),
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: bg,

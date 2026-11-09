@@ -3,10 +3,15 @@ import 'dart:convert';
 import 'package:xml/xml.dart';
 
 enum Topic {
-  tecnologia('Tecnologia'),
-  games('Games'),
+  brasil('Brasil'),
+  regiao('Sua região'),
+  politica('Política'),
+  mundo('Mundo'),
   economia('Economia'),
-  brasil('Brasil e política'),
+  tecnologia('Tecnologia'),
+  saude('Saúde e ciência'),
+  entretenimento('Entretenimento'),
+  games('Games'),
   esportes('Esportes');
 
   final String label;
